@@ -8,10 +8,10 @@ export function Footer() {
           {/* Brand */}
           <div className="col-span-1 md:col-span-2">
             <h2 className="font-orbitron text-2xl font-bold text-white mb-4">
-              Synapse<span className="text-red-500">AI</span>
+              de<span className="text-red-500">way</span>
             </h2>
             <p className="font-space-mono text-gray-300 mb-6 max-w-md">
-              Продвигаем будущее нейросвязи с передовыми технологиями интерфейса мозг-компьютер.
+              Универсальная AI-платформа для разработки, творчества и автоматизации. Код, изображения, видео — всё в одном месте.
             </p>
             <div className="flex space-x-4">
               <a href="#" className="text-gray-400 hover:text-red-500 transition-colors duration-200">
@@ -35,10 +35,10 @@ export function Footer() {
             <ul className="space-y-2">
               <li>
                 <a
-                  href="#technology"
+                  href="#features"
                   className="font-space-mono text-gray-400 hover:text-red-500 transition-colors duration-200"
                 >
-                  Технологии
+                  Возможности
                 </a>
               </li>
               <li>
@@ -51,18 +51,18 @@ export function Footer() {
               </li>
               <li>
                 <a
-                  href="#safety"
-                  className="font-space-mono text-gray-400 hover:text-red-500 transition-colors duration-200"
-                >
-                  Безопасность
-                </a>
-              </li>
-              <li>
-                <a
                   href="#faq"
                   className="font-space-mono text-gray-400 hover:text-red-500 transition-colors duration-200"
                 >
                   Вопросы
+                </a>
+              </li>
+              <li>
+                <a
+                  href="#"
+                  className="font-space-mono text-gray-400 hover:text-red-500 transition-colors duration-200"
+                >
+                  Документация
                 </a>
               </li>
             </ul>
@@ -99,7 +99,7 @@ export function Footer() {
         {/* Bottom Bar */}
         <div className="mt-8 pt-8 border-t border-red-500/20">
           <div className="flex flex-col md:flex-row justify-between items-center">
-            <p className="font-space-mono text-gray-400 text-sm">2025 SynapseAI. Все права защищены.</p>
+            <p className="font-space-mono text-gray-400 text-sm">2025 deway. Все права защищены.</p>
             <div className="flex space-x-6 mt-4 md:mt-0">
               <a
                 href="#"
