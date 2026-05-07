@@ -1,0 +1,20 @@
+{
+  "tests": [
+    {
+      "name": "List models",
+      "method": "GET",
+      "path": "/v1/models",
+      "expectedStatus": 200,
+      "expectedBody": {"object": "list"},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Chat without key",
+      "method": "POST",
+      "path": "/v1/chat/completions",
+      "body": {"model": "qwen2.5:7b", "messages": [{"role": "user", "content": "hi"}]},
+      "expectedStatus": 401,
+      "bodyMatcher": "partial"
+    }
+  ]
+}

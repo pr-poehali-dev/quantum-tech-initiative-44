@@ -36,7 +36,7 @@ export function Navbar() {
 
           {/* CTA Button */}
           <div className="hidden md:block">
-            <Button className="bg-red-500 hover:bg-red-600 text-white font-geist border-0">Начать бесплатно</Button>
+            <Button className="bg-red-500 hover:bg-red-600 text-white font-geist border-0" onClick={() => window.location.href = '/login'}>Начать бесплатно</Button>
           </div>
 
           {/* Mobile menu button */}

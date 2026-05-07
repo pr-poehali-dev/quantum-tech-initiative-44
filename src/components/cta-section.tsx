@@ -14,6 +14,7 @@ export function CTASection() {
             <Button
               size="lg"
               className="bg-primary text-primary-foreground hover:bg-primary/90 pulse-button text-lg px-8 py-4"
+              onClick={() => window.location.href = '/login'}
             >
               Начать бесплатно
             </Button>
@@ -21,8 +22,9 @@ export function CTASection() {
               size="lg"
               variant="outline"
               className="border-primary text-primary hover:bg-primary hover:text-primary-foreground text-lg px-8 py-4 bg-transparent"
+              onClick={() => window.location.href = '/dashboard'}
             >
-              Документация API
+              Войти в Dashboard
             </Button>
           </div>
         </div>

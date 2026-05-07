@@ -1,0 +1,12 @@
+{
+  "tests": [
+    {
+      "name": "List keys unauthorized",
+      "method": "GET",
+      "path": "/",
+      "expectedStatus": 401,
+      "expectedBody": {"error": "Unauthorized"},
+      "bodyMatcher": "partial"
+    }
+  ]
+}
