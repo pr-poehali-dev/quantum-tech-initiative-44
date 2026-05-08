@@ -97,6 +97,10 @@ export default function Dashboard() {
         </h1>
         <div className="flex items-center gap-4">
           <span className="text-zinc-400 text-sm">{user.email}</span>
+          <Button size="sm" className="bg-red-500 hover:bg-red-600 text-white border-0" onClick={() => navigate('/chat')}>
+            <Icon name="MessageSquare" size={14} className="mr-1.5" />
+            Открыть чат
+          </Button>
           {user.role === 'admin' && (
             <Button variant="outline" size="sm" className="border-red-500/30 text-red-400 hover:bg-red-500/10" onClick={() => navigate('/admin')}>
               Admin
