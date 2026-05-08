@@ -159,6 +159,41 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
+        {/* Models */}
+        <Card className="bg-zinc-900 border-zinc-800">
+          <CardHeader>
+            <CardTitle className="text-white flex items-center gap-2">
+              <Icon name="Cpu" size={18} className="text-red-500" />
+              Доступные модели
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+              {[
+                { id: 'claude-opus-4', provider: 'anthropic', desc: 'Самая мощная модель Anthropic' },
+                { id: 'claude-sonnet-4', provider: 'anthropic', desc: 'Баланс скорости и качества' },
+                { id: 'claude-3-5-sonnet-20241022', provider: 'anthropic', desc: 'Отличное качество кода' },
+                { id: 'claude-3-5-haiku-20241022', provider: 'anthropic', desc: 'Быстрая и дешёвая' },
+                { id: 'qwen2.5:7b', provider: 'ollama', desc: 'Open-source, быстрый' },
+                { id: 'llama3.1:8b', provider: 'ollama', desc: 'Meta LLaMA, универсальный' },
+              ].map(m => (
+                <div key={m.id} className="flex items-center justify-between bg-zinc-800 rounded px-3 py-2 gap-3">
+                  <div>
+                    <code className="text-white text-xs font-mono">{m.id}</code>
+                    <p className="text-zinc-500 text-xs mt-0.5">{m.desc}</p>
+                  </div>
+                  <Badge className={m.provider === 'anthropic'
+                    ? 'bg-orange-500/10 text-orange-400 border-orange-500/20 flex-shrink-0 text-xs'
+                    : 'bg-blue-500/10 text-blue-400 border-blue-500/20 flex-shrink-0 text-xs'
+                  }>
+                    {m.provider}
+                  </Badge>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Quickstart */}
         <Card className="bg-zinc-900 border-zinc-800">
           <CardHeader>
