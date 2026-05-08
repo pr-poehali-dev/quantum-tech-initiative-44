@@ -27,7 +27,7 @@ const features = [
     badge: "Ассистент",
   },
   {
-    title: "API Gateway",
+    title: "API deway",
     description: "Единый API-ключ для доступа ко всем моделям. Rate limiting, квоты и биллинг из коробки.",
     icon: "link",
     badge: "API",

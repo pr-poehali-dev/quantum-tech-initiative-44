@@ -1,5 +1,5 @@
 """
-Аутентификация пользователей deway API Gateway.
+Аутентификация пользователей API deway.
 Регистрация, вход, выход. action передаётся через ?action=login|register|me
 """
 import json

@@ -39,7 +39,7 @@ export default function Login() {
           <h1 className="font-orbitron text-3xl font-bold text-white">
             de<span className="text-red-500">way</span>
           </h1>
-          <p className="text-gray-400 mt-2">API Gateway</p>
+          <p className="text-gray-400 mt-2">API deway</p>
         </div>
 
         <Card className="bg-zinc-900 border-red-500/20">

@@ -1,5 +1,5 @@
 """
-deway API Gateway — прокси роутер.
+API deway — прокси роутер.
 Принимает запросы с dw-ключами, роутит к Ollama или Anthropic.
 Совместим с OpenAI API формата /v1/chat/completions.
 """

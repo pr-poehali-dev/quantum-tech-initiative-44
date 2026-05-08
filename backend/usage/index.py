@@ -1,5 +1,5 @@
 """
-Статистика использования deway API Gateway.
+Статистика использования API deway.
 action передаётся через ?action=summary|by-day|by-model|by-key|logs|admin-users
 """
 import json

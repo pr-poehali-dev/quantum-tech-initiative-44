@@ -63,7 +63,7 @@ export function ApplicationsTimeline() {
           <div className="space-y-3">
             <div className="flex items-center gap-3 text-red-400 text-sm">
               <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-              Готовый API Gateway с управлением ключами
+              Готовый API deway с управлением ключами
             </div>
             <div className="flex items-center gap-3 text-red-400 text-sm">
               <div className="w-2 h-2 bg-red-500 rounded-full"></div>
