@@ -209,7 +209,8 @@ def handler(event: dict, context) -> dict:
     method = event.get('httpMethod', 'GET')
 
     # GET /v1/models — list available models
-    if method == 'GET' and 'models' in path:
+    action = (event.get('queryStringParameters') or {}).get('action', '')
+    if method == 'GET' and ('models' in path or action == 'models'):
         ollama_url = os.environ.get('OLLAMA_BASE_URL', 'http://localhost:11434')
         models = []
         try:
@@ -231,7 +232,7 @@ def handler(event: dict, context) -> dict:
         }
 
     # POST /v1/chat/completions
-    if method == 'POST' and 'chat' in path:
+    if method == 'POST' and ('chat' in path or action == 'chat' or path == '/'):
         raw_key = get_api_key_from_request(event)
         if not raw_key or not raw_key.startswith('dw-'):
             return {'statusCode': 401, 'headers': {**CORS_HEADERS, 'Content-Type': 'application/json'}, 'body': json.dumps({'error': {'message': 'Invalid or missing deway API key', 'type': 'authentication_error'}})}

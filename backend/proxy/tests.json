@@ -1,9 +1,9 @@
 {
   "tests": [
     {
-      "name": "List models",
+      "name": "List models via action param",
       "method": "GET",
-      "path": "/v1/models",
+      "path": "/?action=models",
       "expectedStatus": 200,
       "expectedBody": {"object": "list"},
       "bodyMatcher": "partial"
@@ -11,7 +11,7 @@
     {
       "name": "Chat without key",
       "method": "POST",
-      "path": "/v1/chat/completions",
+      "path": "/?action=chat",
       "body": {"model": "qwen2.5:7b", "messages": [{"role": "user", "content": "hi"}]},
       "expectedStatus": 401,
       "bodyMatcher": "partial"

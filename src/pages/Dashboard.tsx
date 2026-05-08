@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { keysApi, usageApi } from '@/lib/api'
+import { keysApi, usageApi, proxyApi } from '@/lib/api'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -39,6 +39,9 @@ export default function Dashboard() {
   const [dialogOpen, setDialogOpen] = useState(false)
   const [loading, setLoading] = useState(true)
   const [copied, setCopied] = useState(false)
+  const [models, setModels] = useState<{ id: string; provider: string }[]>([])
+  const [selectedModel, setSelectedModel] = useState<string | null>(null)
+  const [codeLang, setCodeLang] = useState<'python' | 'js' | 'curl'>('python')
 
   useEffect(() => {
     if (!user.id) { navigate('/login'); return }
@@ -47,9 +50,13 @@ export default function Dashboard() {
 
   const load = async () => {
     setLoading(true)
-    const [keysRes, summaryRes] = await Promise.all([keysApi.list(), usageApi.summary(30)])
+    const [keysRes, summaryRes, modelsRes] = await Promise.all([keysApi.list(), usageApi.summary(30), proxyApi.models()])
     if (keysRes.keys) setKeys(keysRes.keys)
     if (summaryRes.summary) setSummary(summaryRes.summary)
+    if (modelsRes.data) {
+      setModels(modelsRes.data)
+      if (modelsRes.data.length > 0) setSelectedModel(modelsRes.data[0].id)
+    }
     setLoading(false)
   }
 
@@ -167,30 +174,81 @@ export default function Dashboard() {
               Доступные модели
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-4">
+            {models.length === 0 && !loading && (
+              <p className="text-zinc-500 text-sm">Нет доступных моделей</p>
+            )}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-              {[
-                { id: 'claude-opus-4', provider: 'anthropic', desc: 'Самая мощная модель Anthropic' },
-                { id: 'claude-sonnet-4', provider: 'anthropic', desc: 'Баланс скорости и качества' },
-                { id: 'claude-3-5-sonnet-20241022', provider: 'anthropic', desc: 'Отличное качество кода' },
-                { id: 'claude-3-5-haiku-20241022', provider: 'anthropic', desc: 'Быстрая и дешёвая' },
-                { id: 'qwen2.5:7b', provider: 'ollama', desc: 'Open-source, быстрый' },
-                { id: 'llama3.1:8b', provider: 'ollama', desc: 'Meta LLaMA, универсальный' },
-              ].map(m => (
-                <div key={m.id} className="flex items-center justify-between bg-zinc-800 rounded px-3 py-2 gap-3">
-                  <div>
-                    <code className="text-white text-xs font-mono">{m.id}</code>
-                    <p className="text-zinc-500 text-xs mt-0.5">{m.desc}</p>
-                  </div>
+              {models.map(m => (
+                <button
+                  key={m.id}
+                  onClick={() => setSelectedModel(selectedModel === m.id ? null : m.id)}
+                  className={`flex items-center justify-between rounded px-3 py-2 gap-3 text-left transition-colors border ${
+                    selectedModel === m.id
+                      ? 'bg-red-500/10 border-red-500/40'
+                      : 'bg-zinc-800 border-transparent hover:border-zinc-600'
+                  }`}
+                >
+                  <code className="text-white text-xs font-mono">{m.id}</code>
                   <Badge className={m.provider === 'anthropic'
                     ? 'bg-orange-500/10 text-orange-400 border-orange-500/20 flex-shrink-0 text-xs'
                     : 'bg-blue-500/10 text-blue-400 border-blue-500/20 flex-shrink-0 text-xs'
                   }>
                     {m.provider}
                   </Badge>
-                </div>
+                </button>
               ))}
             </div>
+
+            {/* Code example for selected model */}
+            {selectedModel && (
+              <div className="border border-zinc-700 rounded-lg overflow-hidden">
+                <div className="flex items-center justify-between px-3 py-2 bg-zinc-800 border-b border-zinc-700">
+                  <span className="text-zinc-400 text-xs">Подключение: <code className="text-green-400">{selectedModel}</code></span>
+                  <div className="flex gap-1">
+                    {(['python', 'js', 'curl'] as const).map(l => (
+                      <button key={l} onClick={() => setCodeLang(l)}
+                        className={`px-2 py-0.5 rounded text-xs font-mono transition-colors ${codeLang === l ? 'bg-red-500 text-white' : 'text-zinc-400 hover:text-white'}`}>
+                        {l === 'js' ? 'node' : l}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <pre className="bg-zinc-950 text-green-400 text-xs p-4 overflow-x-auto leading-relaxed">
+                  {codeLang === 'python' && `from openai import OpenAI
+
+client = OpenAI(
+    api_key="dw-YOUR_KEY",
+    base_url="${proxyUrl}/v1"
+)
+
+response = client.chat.completions.create(
+    model="${selectedModel}",
+    messages=[{"role": "user", "content": "Привет!"}]
+)
+print(response.choices[0].message.content)`}
+                  {codeLang === 'js' && `import OpenAI from 'openai';
+
+const client = new OpenAI({
+  apiKey: 'dw-YOUR_KEY',
+  baseURL: '${proxyUrl}/v1',
+});
+
+const response = await client.chat.completions.create({
+  model: '${selectedModel}',
+  messages: [{ role: 'user', content: 'Привет!' }],
+});
+console.log(response.choices[0].message.content);`}
+                  {codeLang === 'curl' && `curl ${proxyUrl}/v1/chat/completions \\
+  -H "Authorization: Bearer dw-YOUR_KEY" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "model": "${selectedModel}",
+    "messages": [{"role": "user", "content": "Привет!"}]
+  }'`}
+                </pre>
+              </div>
+            )}
           </CardContent>
         </Card>
 
