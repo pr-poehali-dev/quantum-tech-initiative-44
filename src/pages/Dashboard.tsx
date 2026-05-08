@@ -159,6 +159,50 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
+        {/* Quickstart */}
+        <Card className="bg-zinc-900 border-zinc-800">
+          <CardHeader>
+            <CardTitle className="text-white flex items-center justify-between">
+              <span className="flex items-center gap-2">
+                <Icon name="BookOpen" size={18} className="text-red-500" />
+                Быстрый старт
+              </span>
+              <Button variant="ghost" size="sm" className="text-red-400 hover:text-red-300 text-xs" onClick={() => navigate('/docs')}>
+                Полная документация →
+              </Button>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <p className="text-zinc-400 text-sm">deway совместим с OpenAI SDK — просто замени <code className="text-green-400 bg-zinc-800 px-1 rounded">base_url</code>:</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="bg-zinc-800 rounded p-3 space-y-2">
+                <p className="text-zinc-400 text-xs font-medium">Python</p>
+                <pre className="text-green-400 text-xs overflow-x-auto leading-relaxed">{`from openai import OpenAI
+client = OpenAI(
+    api_key="dw-YOUR_KEY",
+    base_url="${proxyUrl}/v1"
+)
+resp = client.chat.completions.create(
+    model="claude-sonnet-4",
+    messages=[{"role":"user","content":"Привет!"}]
+)`}</pre>
+              </div>
+              <div className="bg-zinc-800 rounded p-3 space-y-2">
+                <p className="text-zinc-400 text-xs font-medium">Node.js</p>
+                <pre className="text-green-400 text-xs overflow-x-auto leading-relaxed">{`import OpenAI from 'openai';
+const client = new OpenAI({
+  apiKey: 'dw-YOUR_KEY',
+  baseURL: '${proxyUrl}/v1',
+});
+const resp = await client.chat.completions.create({
+  model: 'claude-sonnet-4',
+  messages: [{role:'user',content:'Привет!'}],
+});`}</pre>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* API Keys */}
         <div>
           <div className="flex items-center justify-between mb-4">
