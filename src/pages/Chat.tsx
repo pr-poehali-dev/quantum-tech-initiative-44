@@ -14,6 +14,15 @@ import { proxyApi } from '@/lib/api'
 
 const PROXY_URL = 'https://functions.poehali.dev/db4455a3-fb31-4d3d-9fa5-4067e71d38b2'
 
+type ApiContentPart =
+  | { type: 'text'; text: string }
+  | { type: 'image_url'; image_url: { url: string } }
+
+type ApiMessage = {
+  role: string
+  content: string | ApiContentPart[]
+}
+
 interface Attachment {
   id: string
   name: string
@@ -101,10 +110,10 @@ function MessageContent({ content }: { content: string }) {
       remarkPlugins={[remarkGfm, remarkMath]}
       rehypePlugins={[rehypeHighlight, rehypeKatex]}
       components={{
-        code({ className, children, ...props }: React.ComponentPropsWithoutRef<'code'> & { className?: string }) {
+        code({ className, children }: React.ComponentPropsWithoutRef<'code'> & { className?: string }) {
           const isBlock = className?.startsWith('language-')
           if (isBlock) return <CodeBlock className={className}>{String(children).replace(/\n$/, '')}</CodeBlock>
-          return <code className="bg-zinc-700 text-red-300 px-1.5 py-0.5 rounded text-sm font-mono" {...props}>{children}</code>
+          return <code className="bg-zinc-700 text-red-300 px-1.5 py-0.5 rounded text-sm font-mono">{children}</code>
         },
         p: ({ children }) => <p className="mb-3 last:mb-0 leading-7">{children}</p>,
         ul: ({ children }) => <ul className="list-disc pl-5 mb-3 space-y-1">{children}</ul>,
@@ -229,7 +238,8 @@ export default function Chat() {
       const reader = new FileReader()
       const isImage = file.type.startsWith('image/')
       reader.onload = e => {
-        const data = e.target?.result as string
+        const result = e.target?.result
+        const data = typeof result === 'string' ? result : ''
         resolve({
           id: makeId(),
           name: file.name,
@@ -270,11 +280,11 @@ export default function Chat() {
 
   const removeAttachment = (id: string) => setAttachments(prev => prev.filter(a => a.id !== id))
 
-  const buildApiContent = (text: string, atts: Attachment[]) => {
+  const buildApiContent = (text: string, atts: Attachment[]): string | ApiContentPart[] => {
     if (!atts.length) return text
     const imageAtts = atts.filter(a => a.type === 'image')
     const textAtts = atts.filter(a => a.type !== 'image')
-    const parts: unknown[] = []
+    const parts: ApiContentPart[] = []
     if (text) parts.push({ type: 'text', text })
     for (const att of imageAtts) {
       const base64 = att.data.split(',')[1]
@@ -372,8 +382,8 @@ export default function Chat() {
     const ctrl = new AbortController()
     abortRef.current = ctrl
 
-    const sysMsg = convo.systemPrompt ? [{ role: 'system', content: convo.systemPrompt }] : []
-    const apiMessages = [
+    const sysMsg: ApiMessage[] = convo.systemPrompt ? [{ role: 'system', content: convo.systemPrompt }] : []
+    const apiMessages: ApiMessage[] = [
       ...sysMsg,
       ...messages.filter(m => m.role !== 'system').map(m => ({
         role: m.role,
@@ -415,8 +425,9 @@ export default function Chat() {
       updateConvos(currentConvos.map(c => c.id === convo.id ? { ...c, messages: [...messages, assistantMsg] } : c))
       setStreamingContent('')
     } catch (e: unknown) {
-      if ((e as Error)?.name === 'AbortError') return
-      const errMsg: Message = { id: makeId(), role: 'assistant', content: `Ошибка: ${(e as Error)?.message || 'Соединение прервано'}`, createdAt: Date.now() }
+      if (e instanceof Error && e.name === 'AbortError') return
+      const msg = e instanceof Error ? e.message : 'Соединение прервано'
+      const errMsg: Message = { id: makeId(), role: 'assistant', content: `Ошибка: ${msg}`, createdAt: Date.now() }
       updateConvos(currentConvos.map(c => c.id === convo.id ? { ...c, messages: [...messages, errMsg] } : c))
       setStreamingContent('')
     } finally {
