@@ -3,7 +3,7 @@
     {
       "name": "Summary unauthorized",
       "method": "GET",
-      "path": "/summary",
+      "path": "/?action=summary",
       "expectedStatus": 401,
       "expectedBody": {"error": "Unauthorized"},
       "bodyMatcher": "partial"

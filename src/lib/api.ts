@@ -16,38 +16,40 @@ function getAuthHeaders() {
 
 export const authApi = {
   register: (email: string, password: string) =>
-    fetch(`${URLS.auth}/register`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password }) }).then(r => r.json()),
+    fetch(`${URLS.auth}?action=register`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password }) }).then(r => r.json()),
   login: (email: string, password: string) =>
-    fetch(`${URLS.auth}/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password }) }).then(r => r.json()),
+    fetch(`${URLS.auth}?action=login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password }) }).then(r => r.json()),
+  me: () =>
+    fetch(`${URLS.auth}?action=me`, { headers: getAuthHeaders() }).then(r => r.json()),
 }
 
 export const keysApi = {
   list: () =>
-    fetch(`${URLS.apiKeys}/`, { headers: getAuthHeaders() }).then(r => r.json()),
+    fetch(`${URLS.apiKeys}?action=list`, { headers: getAuthHeaders() }).then(r => r.json()),
   create: (data: { name: string; quota_tokens?: number; rate_limit_rpm?: number; allowed_models?: string[] }) =>
-    fetch(`${URLS.apiKeys}/`, { method: 'POST', headers: getAuthHeaders(), body: JSON.stringify(data) }).then(r => r.json()),
+    fetch(`${URLS.apiKeys}?action=create`, { method: 'POST', headers: getAuthHeaders(), body: JSON.stringify(data) }).then(r => r.json()),
   revoke: (id: number) =>
-    fetch(`${URLS.apiKeys}/${id}`, { method: 'DELETE', headers: getAuthHeaders() }).then(r => r.json()),
+    fetch(`${URLS.apiKeys}?action=revoke&id=${id}`, { method: 'POST', headers: getAuthHeaders() }).then(r => r.json()),
   update: (id: number, data: object) =>
-    fetch(`${URLS.apiKeys}/${id}`, { method: 'PUT', headers: getAuthHeaders(), body: JSON.stringify(data) }).then(r => r.json()),
+    fetch(`${URLS.apiKeys}?action=update&id=${id}`, { method: 'PUT', headers: getAuthHeaders(), body: JSON.stringify(data) }).then(r => r.json()),
 }
 
 export const usageApi = {
   summary: (days = 30) =>
-    fetch(`${URLS.usage}/summary?days=${days}`, { headers: getAuthHeaders() }).then(r => r.json()),
+    fetch(`${URLS.usage}?action=summary&days=${days}`, { headers: getAuthHeaders() }).then(r => r.json()),
   byDay: (days = 30) =>
-    fetch(`${URLS.usage}/by-day?days=${days}`, { headers: getAuthHeaders() }).then(r => r.json()),
+    fetch(`${URLS.usage}?action=by-day&days=${days}`, { headers: getAuthHeaders() }).then(r => r.json()),
   byModel: (days = 30) =>
-    fetch(`${URLS.usage}/by-model?days=${days}`, { headers: getAuthHeaders() }).then(r => r.json()),
+    fetch(`${URLS.usage}?action=by-model&days=${days}`, { headers: getAuthHeaders() }).then(r => r.json()),
   byKey: (days = 30) =>
-    fetch(`${URLS.usage}/by-key?days=${days}`, { headers: getAuthHeaders() }).then(r => r.json()),
+    fetch(`${URLS.usage}?action=by-key&days=${days}`, { headers: getAuthHeaders() }).then(r => r.json()),
   logs: (limit = 50) =>
-    fetch(`${URLS.usage}/logs?limit=${limit}`, { headers: getAuthHeaders() }).then(r => r.json()),
+    fetch(`${URLS.usage}?action=logs&limit=${limit}`, { headers: getAuthHeaders() }).then(r => r.json()),
   adminUsers: () =>
-    fetch(`${URLS.usage}/admin/users`, { headers: getAuthHeaders() }).then(r => r.json()),
+    fetch(`${URLS.usage}?action=admin-users`, { headers: getAuthHeaders() }).then(r => r.json()),
 }
 
 export const proxyApi = {
   models: () =>
-    fetch(`${URLS.proxy}/v1/models`).then(r => r.json()),
+    fetch(`${URLS.proxy}?action=models`).then(r => r.json()),
 }
