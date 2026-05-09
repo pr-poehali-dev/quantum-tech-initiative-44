@@ -120,16 +120,24 @@ def route_to_pollinations(body, model):
     req_data = json.dumps(payload).encode()
     headers = {'Content-Type': 'application/json', 'User-Agent': 'Mozilla/5.0'}
     result = None
+    last_error = ''
     for url in ['https://text.pollinations.ai/openai', 'https://gen.pollinations.ai/v1/chat/completions']:
         try:
             req = urllib.request.Request(url, data=req_data, headers=headers)
             with urllib.request.urlopen(req, timeout=120) as resp:
-                result = json.loads(resp.read())
+                raw = resp.read()
+                print(f"[pollinations] url={url} model={model} status=200 raw={raw[:300]}")
+                result = json.loads(raw)
             break
-        except Exception:
-            continue
+        except urllib.error.HTTPError as e:
+            body_err = e.read().decode()[:300]
+            last_error = f"HTTP {e.code} from {url}: {body_err}"
+            print(f"[pollinations] url={url} model={model} HTTPError={e.code} body={body_err}")
+        except Exception as ex:
+            last_error = f"{url}: {ex}"
+            print(f"[pollinations] url={url} model={model} error={ex}")
     if result is None:
-        raise Exception('Pollinations API unavailable')
+        raise Exception(f'Pollinations API unavailable: {last_error}')
     content = result.get('choices', [{}])[0].get('message', {}).get('content', '')
     usage = result.get('usage', {})
     prompt_tokens = usage.get('prompt_tokens', count_tokens_approx(body.get('messages', [])))
