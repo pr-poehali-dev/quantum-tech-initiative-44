@@ -668,8 +668,11 @@ export default function Chat() {
                           <div className="px-3 py-1 text-[10px] text-zinc-500 uppercase tracking-wider font-medium">{provider}</div>
                           {models.map(m => (
                             <button key={m.id} onClick={() => { setSelectedModel(m.id); setShowModelSelect(false) }}
-                              className={`w-full text-left px-3 py-2 text-xs hover:bg-zinc-700 transition-colors flex items-center justify-between ${selectedModel === m.id ? 'text-white bg-zinc-700/50' : 'text-zinc-300'}`}>
-                              <span className="truncate">{m.label}</span>
+                              className={`w-full text-left px-3 py-2 hover:bg-zinc-700 transition-colors flex items-center justify-between ${selectedModel === m.id ? 'text-white bg-zinc-700/50' : 'text-zinc-300'}`}>
+                              <div className="min-w-0">
+                                <div className="text-xs truncate">{m.label}</div>
+                                {m.label !== m.id && <div className="text-[10px] text-zinc-600 font-mono truncate">{m.id}</div>}
+                              </div>
                               {selectedModel === m.id && <Icon name="Check" size={12} className="text-red-400 flex-shrink-0 ml-2" />}
                             </button>
                           ))}
@@ -677,7 +680,7 @@ export default function Chat() {
                       ))
                     })()}
                     <div className="border-t border-zinc-700 px-3 py-2 mt-1">
-                      <p className="text-zinc-600 text-[10px]">Бесплатно · Без регистрации · Pollinations AI</p>
+                      <p className="text-zinc-600 text-[10px]">Бесплатно · {freeModels.length} моделей · Pollinations AI</p>
                     </div>
                   </div>
                 </>

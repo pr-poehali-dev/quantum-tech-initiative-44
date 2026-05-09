@@ -39,7 +39,7 @@ export default function Dashboard() {
   const [dialogOpen, setDialogOpen] = useState(false)
   const [loading, setLoading] = useState(true)
   const [copied, setCopied] = useState(false)
-  const [models, setModels] = useState<{ id: string; provider: string }[]>([])
+  const [models, setModels] = useState<{ id: string; provider: string; description?: string }[]>([])
   const [selectedModel, setSelectedModel] = useState<string | null>(null)
   const [codeLang, setCodeLang] = useState<'python' | 'js' | 'curl'>('python')
 
@@ -176,32 +176,56 @@ export default function Dashboard() {
             <CardTitle className="text-white flex items-center gap-2">
               <Icon name="Cpu" size={18} className="text-red-500" />
               Доступные модели
+              {models.length > 0 && (
+                <Badge className="bg-zinc-700 text-zinc-300 border-zinc-600 ml-1">{models.length}</Badge>
+              )}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             {models.length === 0 && !loading && (
               <p className="text-zinc-500 text-sm">Нет доступных моделей</p>
             )}
+            {loading && (
+              <div className="flex items-center gap-2 text-zinc-500 text-sm">
+                <Icon name="Loader2" size={14} className="animate-spin" />
+                Загрузка моделей...
+              </div>
+            )}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-              {models.map(m => (
-                <button
-                  key={m.id}
-                  onClick={() => setSelectedModel(selectedModel === m.id ? null : m.id)}
-                  className={`flex items-center justify-between rounded px-3 py-2 gap-3 text-left transition-colors border ${
-                    selectedModel === m.id
-                      ? 'bg-red-500/10 border-red-500/40'
-                      : 'bg-zinc-800 border-transparent hover:border-zinc-600'
-                  }`}
-                >
-                  <code className="text-white text-xs font-mono">{m.id}</code>
-                  <Badge className={m.provider === 'anthropic'
-                    ? 'bg-orange-500/10 text-orange-400 border-orange-500/20 flex-shrink-0 text-xs'
-                    : 'bg-blue-500/10 text-blue-400 border-blue-500/20 flex-shrink-0 text-xs'
-                  }>
-                    {m.provider}
-                  </Badge>
-                </button>
-              ))}
+              {models.map(m => {
+                const providerColors: Record<string, string> = {
+                  openai: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
+                  anthropic: 'bg-orange-500/10 text-orange-400 border-orange-500/20',
+                  google: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
+                  mistral: 'bg-purple-500/10 text-purple-400 border-purple-500/20',
+                  meta: 'bg-sky-500/10 text-sky-400 border-sky-500/20',
+                  deepseek: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20',
+                  alibaba: 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20',
+                  microsoft: 'bg-blue-400/10 text-blue-300 border-blue-400/20',
+                  pollinations: 'bg-pink-500/10 text-pink-400 border-pink-500/20',
+                }
+                const badgeClass = providerColors[m.provider?.toLowerCase()] || 'bg-zinc-700/50 text-zinc-400 border-zinc-600'
+                const label = m.description && m.description !== m.id ? m.description : null
+                return (
+                  <button
+                    key={m.id}
+                    onClick={() => setSelectedModel(selectedModel === m.id ? null : m.id)}
+                    className={`flex items-center justify-between rounded px-3 py-2.5 gap-3 text-left transition-colors border ${
+                      selectedModel === m.id
+                        ? 'bg-red-500/10 border-red-500/40'
+                        : 'bg-zinc-800 border-transparent hover:border-zinc-600'
+                    }`}
+                  >
+                    <div className="min-w-0">
+                      {label && <div className="text-white text-xs font-medium truncate">{label}</div>}
+                      <code className={`font-mono truncate block ${label ? 'text-zinc-500 text-[10px]' : 'text-white text-xs'}`}>{m.id}</code>
+                    </div>
+                    <Badge className={`${badgeClass} flex-shrink-0 text-xs capitalize`}>
+                      {m.provider}
+                    </Badge>
+                  </button>
+                )
+              })}
             </div>
 
             {/* Code example for selected model */}
