@@ -670,8 +670,8 @@ export default function Chat() {
               {showModelSelect && (
                 <>
                   <div className="fixed inset-0 z-30" onClick={() => setShowModelSelect(false)} />
-                  <div className="absolute right-0 top-full mt-1 bg-zinc-800 border border-zinc-700 rounded-xl shadow-2xl z-40 min-w-[300px] flex flex-col" style={{ maxHeight: '420px' }}>
-                    <div className="overflow-y-auto flex-1 py-1">
+                  <div className="absolute right-0 top-full mt-1 bg-zinc-800 border border-zinc-700 rounded-xl shadow-2xl z-40 min-w-[300px]" style={{ maxHeight: '420px', overflowY: 'auto' }}>
+                    <div className="py-1">
                       {(() => {
                         const grouped = freeModels.reduce<Record<string, typeof freeModels>>((acc, m) => {
                           const p = m.provider || 'Other'
@@ -696,7 +696,7 @@ export default function Chat() {
                         ))
                       })()}
                     </div>
-                    <div className="border-t border-zinc-700 px-3 py-2 flex-shrink-0">
+                    <div className="border-t border-zinc-700 px-3 py-2">
                       <p className="text-zinc-600 text-[10px]">Бесплатно · {freeModels.length} моделей · Pollinations AI</p>
                     </div>
                   </div>
