@@ -1,6 +1,6 @@
 import { Canvas, extend, useFrame } from "@react-three/fiber"
 import { useAspect, useTexture } from "@react-three/drei"
-import { useMemo, useRef, useState, useEffect } from "react"
+import { useMemo, useRef, useState, useEffect, Suspense } from "react"
 import * as THREE from "three"
 
 const TEXTUREMAP = { src: "https://i.postimg.cc/XYwvXN8D/img-4.png" }
@@ -185,7 +185,9 @@ export const Hero3DWebGL = () => {
         camera={{ position: [0, 0, 1] }}
         style={{ background: "#000000" }}
       >
-        <Scene />
+        <Suspense fallback={null}>
+          <Scene />
+        </Suspense>
       </Canvas>
     </div>
   )
