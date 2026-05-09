@@ -15,7 +15,7 @@ from datetime import datetime, timezone
 CORS_HEADERS = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Authorization',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Authorization, X-Api-Key, X-User-Id, X-User-Role',
 }
 
 ANTHROPIC_MODELS = {
@@ -28,10 +28,14 @@ def get_db():
     return psycopg2.connect(os.environ['DATABASE_URL'])
 
 def get_api_key_from_request(event):
-    auth = (event.get('headers') or {}).get('Authorization') or \
-           (event.get('headers') or {}).get('authorization') or \
-           (event.get('headers') or {}).get('X-Authorization') or \
-           (event.get('headers') or {}).get('x-authorization', '')
+    headers = event.get('headers') or {}
+    # Check X-Api-Key header first (safe, not filtered by proxy)
+    xkey = headers.get('X-Api-Key') or headers.get('x-api-key', '')
+    if xkey:
+        return xkey
+    # Fallback: Authorization / X-Authorization
+    auth = headers.get('Authorization') or headers.get('authorization') or \
+           headers.get('X-Authorization') or headers.get('x-authorization', '')
     if auth.startswith('Bearer '):
         return auth[7:]
     return None

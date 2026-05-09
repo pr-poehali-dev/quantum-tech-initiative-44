@@ -60,7 +60,7 @@ export const proxyApi = {
     const user = JSON.parse(localStorage.getItem('deway_user') || '{}')
     const apiKey = getApiKey()
     const headers: Record<string, string> = { 'Content-Type': 'application/json' }
-    if (apiKey) headers['Authorization'] = `Bearer ${apiKey}`
+    if (apiKey) headers['X-Api-Key'] = apiKey
     if (user.id) headers['X-User-Id'] = String(user.id)
     return fetch(`${URLS.proxy}?action=chat`, { method: 'POST', headers, body: JSON.stringify(body), signal })
   },
