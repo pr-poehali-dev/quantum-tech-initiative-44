@@ -669,38 +669,11 @@ export default function Chat() {
               </button>
               {showModelSelect && (
                 <>
-                  <div className="fixed inset-0 z-30" onClick={() => { setShowModelSelect(false); setModelSearch('') }} />
+                  <div className="fixed inset-0 z-30" onClick={() => setShowModelSelect(false)} />
                   <div className="absolute right-0 top-full mt-1 bg-zinc-800 border border-zinc-700 rounded-xl shadow-2xl z-40 min-w-[300px] flex flex-col" style={{ maxHeight: '420px' }}>
-                    {/* Search */}
-                    <div className="p-2 border-b border-zinc-700 flex-shrink-0">
-                      <div className="flex items-center gap-2 bg-zinc-900 border border-zinc-600 rounded-lg px-2.5 py-1.5">
-                        <Icon name="Search" size={13} className="text-zinc-500 flex-shrink-0" />
-                        <input
-                          autoFocus
-                          type="text"
-                          value={modelSearch}
-                          onChange={e => setModelSearch(e.target.value)}
-                          placeholder="Поиск модели..."
-                          className="bg-transparent text-white text-xs outline-none flex-1 placeholder:text-zinc-600 min-w-0"
-                        />
-                        {modelSearch && (
-                          <button onClick={() => setModelSearch('')} className="text-zinc-500 hover:text-white">
-                            <Icon name="X" size={11} />
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                    {/* List */}
                     <div className="overflow-y-auto flex-1 py-1">
                       {(() => {
-                        const q = modelSearch.toLowerCase()
-                        const filtered = freeModels.filter(m =>
-                          !q || m.label.toLowerCase().includes(q) || m.id.toLowerCase().includes(q) || m.provider.toLowerCase().includes(q)
-                        )
-                        if (filtered.length === 0) return (
-                          <div className="px-3 py-4 text-center text-zinc-500 text-xs">Ничего не найдено</div>
-                        )
-                        const grouped = filtered.reduce<Record<string, typeof freeModels>>((acc, m) => {
+                        const grouped = freeModels.reduce<Record<string, typeof freeModels>>((acc, m) => {
                           const p = m.provider || 'Other'
                           if (!acc[p]) acc[p] = []
                           acc[p].push(m)
@@ -710,7 +683,7 @@ export default function Chat() {
                           <div key={provider}>
                             <div className="px-3 py-1 text-[10px] text-zinc-500 uppercase tracking-wider font-medium">{provider}</div>
                             {models.map(m => (
-                              <button key={m.id} onClick={() => { setSelectedModel(m.id); setShowModelSelect(false); setModelSearch('') }}
+                              <button key={m.id} onClick={() => { setSelectedModel(m.id); setShowModelSelect(false) }}
                                 className={`w-full text-left px-3 py-2 hover:bg-zinc-700 transition-colors flex items-center justify-between ${selectedModel === m.id ? 'text-white bg-zinc-700/50' : 'text-zinc-300'}`}>
                                 <div className="min-w-0">
                                   <div className="text-xs truncate">{m.label}</div>
