@@ -104,35 +104,87 @@ function CodeBlock({ children, className }: { children: string; className?: stri
   )
 }
 
-function MessageContent({ content }: { content: string }) {
+function ImageTag({ prompt }: { prompt: string }) {
   return (
-    <ReactMarkdown
-      remarkPlugins={[remarkGfm, remarkMath]}
-      rehypePlugins={[rehypeHighlight, rehypeKatex]}
-      components={{
-        code({ className, children }: React.ComponentPropsWithoutRef<'code'> & { className?: string }) {
-          const isBlock = className?.startsWith('language-')
-          if (isBlock) return <CodeBlock className={className}>{String(children).replace(/\n$/, '')}</CodeBlock>
-          return <code className="bg-zinc-700 text-red-300 px-1.5 py-0.5 rounded text-sm font-mono">{children}</code>
-        },
-        p: ({ children }) => <p className="mb-3 last:mb-0 leading-7">{children}</p>,
-        ul: ({ children }) => <ul className="list-disc pl-5 mb-3 space-y-1">{children}</ul>,
-        ol: ({ children }) => <ol className="list-decimal pl-5 mb-3 space-y-1">{children}</ol>,
-        li: ({ children }) => <li className="leading-6">{children}</li>,
-        h1: ({ children }) => <h1 className="text-xl font-bold mb-3 mt-4">{children}</h1>,
-        h2: ({ children }) => <h2 className="text-lg font-semibold mb-2 mt-4">{children}</h2>,
-        h3: ({ children }) => <h3 className="text-base font-semibold mb-2 mt-3">{children}</h3>,
-        blockquote: ({ children }) => <blockquote className="border-l-4 border-red-500 pl-4 my-3 text-zinc-400 italic">{children}</blockquote>,
-        table: ({ children }) => <div className="overflow-x-auto my-3"><table className="w-full border-collapse text-sm">{children}</table></div>,
-        th: ({ children }) => <th className="border border-zinc-600 px-3 py-2 bg-zinc-800 text-left font-semibold">{children}</th>,
-        td: ({ children }) => <td className="border border-zinc-600 px-3 py-2">{children}</td>,
-        a: ({ href, children }) => <a href={href} target="_blank" rel="noopener noreferrer" className="text-red-400 hover:underline">{children}</a>,
-        hr: () => <hr className="border-zinc-700 my-4" />,
-        strong: ({ children }) => <strong className="font-semibold text-white">{children}</strong>,
-      }}
-    >
-      {content}
-    </ReactMarkdown>
+    <div className="my-3 border border-purple-500/30 rounded-xl bg-purple-500/5 p-4">
+      <div className="flex items-center gap-2 mb-2">
+        <span className="text-purple-400 text-xs font-semibold uppercase tracking-wider">Изображение</span>
+        <span className="text-zinc-600 text-xs">— описание для генерации</span>
+      </div>
+      <p className="text-zinc-300 text-sm italic leading-relaxed">{prompt.trim()}</p>
+      <p className="text-zinc-600 text-xs mt-2">Подключи Flux / DALL-E / Midjourney для генерации по этому промпту</p>
+    </div>
+  )
+}
+
+function VideoTag({ prompt }: { prompt: string }) {
+  return (
+    <div className="my-3 border border-blue-500/30 rounded-xl bg-blue-500/5 p-4">
+      <div className="flex items-center gap-2 mb-2">
+        <span className="text-blue-400 text-xs font-semibold uppercase tracking-wider">Видео</span>
+        <span className="text-zinc-600 text-xs">— описание для генерации</span>
+      </div>
+      <p className="text-zinc-300 text-sm italic leading-relaxed">{prompt.trim()}</p>
+      <p className="text-zinc-600 text-xs mt-2">Подключи Kling / Sora / Wan для генерации по этому описанию</p>
+    </div>
+  )
+}
+
+function parseContentParts(content: string): Array<{ type: 'text' | 'image' | 'video'; value: string }> {
+  const parts: Array<{ type: 'text' | 'image' | 'video'; value: string }> = []
+  const regex = /\[IMAGE\]([\s\S]*?)\[\/IMAGE\]|\[VIDEO\]([\s\S]*?)\[\/VIDEO\]/g
+  let last = 0
+  let match
+  while ((match = regex.exec(content)) !== null) {
+    if (match.index > last) parts.push({ type: 'text', value: content.slice(last, match.index) })
+    if (match[1] !== undefined) parts.push({ type: 'image', value: match[1] })
+    else if (match[2] !== undefined) parts.push({ type: 'video', value: match[2] })
+    last = match.index + match[0].length
+  }
+  if (last < content.length) parts.push({ type: 'text', value: content.slice(last) })
+  return parts
+}
+
+function MessageContent({ content }: { content: string }) {
+  const parts = parseContentParts(content)
+  return (
+    <div>
+      {parts.map((part, i) => {
+        if (part.type === 'image') return <ImageTag key={i} prompt={part.value} />
+        if (part.type === 'video') return <VideoTag key={i} prompt={part.value} />
+        if (!part.value.trim()) return null
+        return (
+          <ReactMarkdown
+            key={i}
+            remarkPlugins={[remarkGfm, remarkMath]}
+            rehypePlugins={[rehypeHighlight, rehypeKatex]}
+            components={{
+              code({ className, children }: React.ComponentPropsWithoutRef<'code'> & { className?: string }) {
+                const isBlock = className?.startsWith('language-')
+                if (isBlock) return <CodeBlock className={className}>{String(children).replace(/\n$/, '')}</CodeBlock>
+                return <code className="bg-zinc-700 text-red-300 px-1.5 py-0.5 rounded text-sm font-mono">{children}</code>
+              },
+              p: ({ children }) => <p className="mb-3 last:mb-0 leading-7">{children}</p>,
+              ul: ({ children }) => <ul className="list-disc pl-5 mb-3 space-y-1">{children}</ul>,
+              ol: ({ children }) => <ol className="list-decimal pl-5 mb-3 space-y-1">{children}</ol>,
+              li: ({ children }) => <li className="leading-6">{children}</li>,
+              h1: ({ children }) => <h1 className="text-xl font-bold mb-3 mt-4">{children}</h1>,
+              h2: ({ children }) => <h2 className="text-lg font-semibold mb-2 mt-4">{children}</h2>,
+              h3: ({ children }) => <h3 className="text-base font-semibold mb-2 mt-3">{children}</h3>,
+              blockquote: ({ children }) => <blockquote className="border-l-4 border-red-500 pl-4 my-3 text-zinc-400 italic">{children}</blockquote>,
+              table: ({ children }) => <div className="overflow-x-auto my-3"><table className="w-full border-collapse text-sm">{children}</table></div>,
+              th: ({ children }) => <th className="border border-zinc-600 px-3 py-2 bg-zinc-800 text-left font-semibold">{children}</th>,
+              td: ({ children }) => <td className="border border-zinc-600 px-3 py-2">{children}</td>,
+              a: ({ href, children }) => <a href={href} target="_blank" rel="noopener noreferrer" className="text-red-400 hover:underline">{children}</a>,
+              hr: () => <hr className="border-zinc-700 my-4" />,
+              strong: ({ children }) => <strong className="font-semibold text-white">{children}</strong>,
+            }}
+          >
+            {part.value}
+          </ReactMarkdown>
+        )
+      })}
+    </div>
   )
 }
 

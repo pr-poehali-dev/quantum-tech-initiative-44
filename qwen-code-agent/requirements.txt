@@ -1,0 +1,5 @@
+openai==1.51.0
+rich==13.8.1
+prompt_toolkit==3.0.47
+gitpython==3.1.43
+pathspec==0.12.1
