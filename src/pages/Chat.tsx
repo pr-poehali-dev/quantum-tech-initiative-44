@@ -12,7 +12,7 @@ import { Textarea } from '@/components/ui/textarea'
 import Icon from '@/components/ui/icon'
 import { proxyApi } from '@/lib/api'
 
-const POLLINATIONS_URL = 'https://text.pollinations.ai/openai'
+
 
 type ApiContentPart =
   | { type: 'text'; text: string }
@@ -473,12 +473,7 @@ export default function Chat() {
 
     try {
       const model = convo.model || selectedModel
-      const res = await fetch(POLLINATIONS_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model, messages: apiMessages, stream: false, private: true }),
-        signal: ctrl.signal
-      })
+      const res = await proxyApi.chat({ model, messages: apiMessages, stream: false }, ctrl.signal)
       if (!res.ok) {
         const err = await res.json().catch(() => ({ error: { message: 'Ошибка сервера' } }))
         throw new Error(err.error?.message || 'Ошибка сервера')

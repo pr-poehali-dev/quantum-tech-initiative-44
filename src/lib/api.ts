@@ -49,7 +49,19 @@ export const usageApi = {
     fetch(`${URLS.usage}?action=admin-users`, { headers: getAuthHeaders() }).then(r => r.json()),
 }
 
+function getApiKey() {
+  return localStorage.getItem('deway_active_key') || ''
+}
+
 export const proxyApi = {
   models: () =>
     fetch(`${URLS.proxy}?action=models`).then(r => r.json()),
+  chat: (body: object, signal?: AbortSignal) => {
+    const user = JSON.parse(localStorage.getItem('deway_user') || '{}')
+    const apiKey = getApiKey()
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+    if (apiKey) headers['Authorization'] = `Bearer ${apiKey}`
+    if (user.id) headers['X-User-Id'] = String(user.id)
+    return fetch(`${URLS.proxy}?action=chat`, { method: 'POST', headers, body: JSON.stringify(body), signal })
+  },
 }

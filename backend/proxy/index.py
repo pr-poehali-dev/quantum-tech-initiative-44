@@ -86,7 +86,7 @@ def log_usage(db, key_id, user_id, model, provider, prompt_tokens, completion_to
            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""",
         (key_id, user_id, model, provider, prompt_tokens, completion_tokens, total, path, status_code, latency_ms)
     )
-    if total > 0:
+    if total > 0 and key_id:
         cur.execute(
             "UPDATE api_keys SET used_tokens = used_tokens + %s, last_used_at = NOW() WHERE id = %s",
             (total, key_id)
@@ -304,18 +304,33 @@ def handler(event: dict, context) -> dict:
     # POST /v1/chat/completions
     if method == 'POST' and ('chat' in path or action == 'chat' or path == '/'):
         raw_key = get_api_key_from_request(event)
-        if not raw_key or not raw_key.startswith('dw-'):
-            return {'statusCode': 401, 'headers': {**CORS_HEADERS, 'Content-Type': 'application/json'}, 'body': json.dumps({'error': {'message': 'Invalid or missing deway API key', 'type': 'authentication_error'}})}
+        headers_in = event.get('headers') or {}
+        user_id_header = headers_in.get('X-User-Id') or headers_in.get('x-user-id', '')
 
         db = get_db()
-        key_info, err = validate_key(db, raw_key)
-        if err:
-            db.close()
-            return {'statusCode': 401, 'headers': {**CORS_HEADERS, 'Content-Type': 'application/json'}, 'body': json.dumps({'error': {'message': err, 'type': 'authentication_error'}})}
 
-        if not check_rate_limit(db, key_info['id'], key_info['rate_limit_rpm']):
+        # Auth: dw-key OR internal user (X-User-Id header from app)
+        if raw_key and raw_key.startswith('dw-'):
+            key_info, err = validate_key(db, raw_key)
+            if err:
+                db.close()
+                return {'statusCode': 401, 'headers': {**CORS_HEADERS, 'Content-Type': 'application/json'}, 'body': json.dumps({'error': {'message': err, 'type': 'authentication_error'}})}
+            if not check_rate_limit(db, key_info['id'], key_info['rate_limit_rpm']):
+                db.close()
+                return {'statusCode': 429, 'headers': {**CORS_HEADERS, 'Content-Type': 'application/json'}, 'body': json.dumps({'error': {'message': 'Rate limit exceeded', 'type': 'rate_limit_error'}})}
+        elif user_id_header and user_id_header.isdigit():
+            # Internal app user — find their active key or use anonymous slot
+            cur = db.cursor()
+            cur.execute("SELECT id, rate_limit_rpm, allowed_models FROM api_keys WHERE user_id = %s AND is_active = true ORDER BY id LIMIT 1", (int(user_id_header),))
+            row = cur.fetchone()
+            cur.close()
+            if row:
+                key_info = {'id': row[0], 'user_id': int(user_id_header), 'quota_tokens': None, 'used_tokens': 0, 'rate_limit_rpm': row[1], 'allowed_models': row[2]}
+            else:
+                key_info = {'id': None, 'user_id': int(user_id_header), 'quota_tokens': None, 'used_tokens': 0, 'rate_limit_rpm': 60, 'allowed_models': None}
+        else:
             db.close()
-            return {'statusCode': 429, 'headers': {**CORS_HEADERS, 'Content-Type': 'application/json'}, 'body': json.dumps({'error': {'message': 'Rate limit exceeded', 'type': 'rate_limit_error'}})}
+            return {'statusCode': 401, 'headers': {**CORS_HEADERS, 'Content-Type': 'application/json'}, 'body': json.dumps({'error': {'message': 'Invalid or missing API key', 'type': 'authentication_error'}})}
 
         body = {}
         if event.get('body'):
