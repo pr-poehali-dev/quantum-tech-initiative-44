@@ -447,33 +447,16 @@ export default function Chat() {
       const res = await fetch(`${PROXY_URL}/v1/chat/completions`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
-        body: JSON.stringify({ model: convo.model || selectedModel, messages: apiMessages, stream: true }),
+        body: JSON.stringify({ model: convo.model || selectedModel, messages: apiMessages, stream: false }),
         signal: ctrl.signal
       })
       if (!res.ok) {
         const err = await res.json().catch(() => ({ error: { message: 'Ошибка сервера' } }))
-        throw new Error(err.error?.message || 'Ошибка сервера')
+        throw new Error(err.error?.message || err.error?.error?.message || 'Ошибка сервера')
       }
-      const reader = res.body?.getReader()
-      const decoder = new TextDecoder()
-      let full = ''
-      if (reader) {
-        while (true) {
-          const { done, value } = await reader.read()
-          if (done) break
-          const chunk = decoder.decode(value, { stream: true })
-          for (const line of chunk.split('\n').filter(l => l.startsWith('data: '))) {
-            const data = line.slice(6)
-            if (data === '[DONE]') break
-            try {
-              const json = JSON.parse(data)
-              full += json.choices?.[0]?.delta?.content || ''
-              setStreamingContent(full)
-            } catch (_e) { /* skip */ }
-          }
-        }
-      }
-      const assistantMsg: Message = { id: makeId(), role: 'assistant', content: full || 'Нет ответа', createdAt: Date.now() }
+      const data = await res.json()
+      const full = data.choices?.[0]?.message?.content || 'Нет ответа'
+      const assistantMsg: Message = { id: makeId(), role: 'assistant', content: full, createdAt: Date.now() }
       updateConvos(currentConvos.map(c => c.id === convo.id ? { ...c, messages: [...messages, assistantMsg] } : c))
       setStreamingContent('')
     } catch (e: unknown) {
