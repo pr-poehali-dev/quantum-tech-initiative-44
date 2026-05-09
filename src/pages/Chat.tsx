@@ -52,29 +52,43 @@ interface Conversation {
 const DEFAULT_MODEL = 'openai'
 
 const FALLBACK_MODELS = [
-  { id: 'openai',            label: 'GPT-4o',               provider: 'OpenAI' },
-  { id: 'openai-large',      label: 'GPT-4o Large',         provider: 'OpenAI' },
-  { id: 'openai-reasoning',  label: 'o3-mini Reasoning',    provider: 'OpenAI' },
-  { id: 'openai-roblox',     label: 'GPT-4o Roblox',        provider: 'OpenAI' },
-  { id: 'mistral',           label: 'Mistral Large',        provider: 'Mistral' },
-  { id: 'mistral-roblox',    label: 'Mistral Roblox',       provider: 'Mistral' },
-  { id: 'llama',             label: 'Llama 3.3 70B',        provider: 'Meta' },
-  { id: 'llamalight',        label: 'Llama 3.1 8B',         provider: 'Meta' },
-  { id: 'llamauncensored',   label: 'Llama Uncensored',     provider: 'Meta' },
-  { id: 'gemini',            label: 'Gemini 2.0 Flash',     provider: 'Google' },
-  { id: 'gemini-thinking',   label: 'Gemini 2.0 Thinking',  provider: 'Google' },
-  { id: 'deepseek',          label: 'DeepSeek-V3',          provider: 'DeepSeek' },
-  { id: 'deepseek-r1',       label: 'DeepSeek-R1',          provider: 'DeepSeek' },
-  { id: 'qwen-coder',        label: 'Qwen 2.5 Coder 32B',   provider: 'Alibaba' },
-  { id: 'qwq',               label: 'QwQ 32B Reasoning',    provider: 'Alibaba' },
-  { id: 'phi',               label: 'Phi-4 14B',            provider: 'Microsoft' },
-  { id: 'claude-hybridspace',label: 'Claude Hybridspace',   provider: 'Anthropic' },
-  { id: 'hormoz',            label: 'Hormoz 8B',            provider: 'Community' },
-  { id: 'midijourney',       label: 'MidiJourney',          provider: 'Community' },
-  { id: 'rtist',             label: 'Rtist',                provider: 'Community' },
-  { id: 'searchgpt',        label: 'SearchGPT (web)',       provider: 'OpenAI' },
-  { id: 'gemini-search',     label: 'Gemini Search (web)',  provider: 'Google' },
-  { id: 'evil',              label: 'Evil (без цензуры)',   provider: 'Community' },
+  // OpenAI
+  { id: 'openai',             label: 'GPT-4o',                    provider: 'OpenAI' },
+  { id: 'openai-large',       label: 'GPT-4o Large',              provider: 'OpenAI' },
+  { id: 'openai-reasoning',   label: 'o3-mini Reasoning',         provider: 'OpenAI' },
+  { id: 'openai-roblox',      label: 'GPT-4o (Roblox)',           provider: 'OpenAI' },
+  { id: 'searchgpt',          label: 'SearchGPT + Web Search',    provider: 'OpenAI' },
+  // Google
+  { id: 'gemini',             label: 'Gemini 2.0 Flash',          provider: 'Google' },
+  { id: 'gemini-thinking',    label: 'Gemini 2.0 Flash Thinking', provider: 'Google' },
+  { id: 'gemini-search',      label: 'Gemini 2.0 + Google Search',provider: 'Google' },
+  // Anthropic
+  { id: 'claude-hybridspace', label: 'Claude (HybridSpace)',      provider: 'Anthropic' },
+  // Meta
+  { id: 'llama',              label: 'Llama 3.3 70B',             provider: 'Meta' },
+  { id: 'llamalight',         label: 'Llama 3.1 8B Light',        provider: 'Meta' },
+  { id: 'llamauncensored',    label: 'Llama Uncensored',          provider: 'Meta' },
+  // Mistral
+  { id: 'mistral',            label: 'Mistral Large 2',           provider: 'Mistral' },
+  { id: 'mistral-roblox',     label: 'Mistral (Roblox)',          provider: 'Mistral' },
+  // DeepSeek
+  { id: 'deepseek',           label: 'DeepSeek V3',               provider: 'DeepSeek' },
+  { id: 'deepseek-r1',        label: 'DeepSeek R1 Reasoning',     provider: 'DeepSeek' },
+  // Alibaba / Qwen
+  { id: 'qwen-coder',         label: 'Qwen 2.5 Coder 32B',        provider: 'Alibaba' },
+  { id: 'qwq',                label: 'QwQ 32B Reasoning',         provider: 'Alibaba' },
+  { id: 'qwen',               label: 'Qwen 2.5 72B',              provider: 'Alibaba' },
+  // Microsoft
+  { id: 'phi',                label: 'Phi-4 14B',                 provider: 'Microsoft' },
+  // Community
+  { id: 'hormoz',             label: 'Hormoz 8B',                 provider: 'Community' },
+  { id: 'sur',                label: 'Sur (multilingual)',        provider: 'Community' },
+  { id: 'sur-mistral',        label: 'Sur Mistral',               provider: 'Community' },
+  { id: 'unity',              label: 'Unity Uncensored',          provider: 'Community' },
+  { id: 'bidara',             label: 'Bidara',                    provider: 'Community' },
+  { id: 'midijourney',        label: 'MidiJourney',               provider: 'Community' },
+  { id: 'rtist',              label: 'Rtist',                     provider: 'Community' },
+  { id: 'evil',               label: 'Evil (без цензуры)',        provider: 'Community' },
 ]
 const STARTERS = [
   'Напиши функцию сортировки на Python',

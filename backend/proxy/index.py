@@ -108,6 +108,7 @@ def count_tokens_approx(messages):
 
 def route_to_pollinations(body, model):
     url = 'https://text.pollinations.ai/openai'
+    # fallback: try gen.pollinations.ai if text fails (handled by caller)
     payload = {
         'model': model,
         'messages': body.get('messages', []),
@@ -240,43 +241,73 @@ def handler(event: dict, context) -> dict:
     action = (event.get('queryStringParameters') or {}).get('action', '')
     if method == 'GET' and ('models' in path or action == 'models'):
         models = []
-        # Fetch from Pollinations
-        try:
-            req = urllib.request.Request(
-                'https://text.pollinations.ai/models',
-                headers={'User-Agent': 'Mozilla/5.0'}
-            )
-            with urllib.request.urlopen(req, timeout=10) as resp:
-                data = json.loads(resp.read())
-                if isinstance(data, list):
-                    for m in data:
-                        if m.get('type') not in ('image', 'audio') and 'audio' not in m.get('name', ''):
-                            models.append({
-                                'id': m.get('name', ''),
-                                'object': 'model',
-                                'provider': m.get('provider', 'pollinations'),
-                                'description': m.get('description', m.get('name', '')),
-                            })
-        except Exception:
-            pass
-        # Fallback hardcoded list if fetch failed
+        # Fetch from Pollinations (try multiple endpoints)
+        for endpoint in [
+            'https://text.pollinations.ai/models',
+            'https://api.pollinations.ai/v1/models',
+        ]:
+            if models:
+                break
+            try:
+                req = urllib.request.Request(endpoint, headers={'User-Agent': 'Mozilla/5.0'})
+                with urllib.request.urlopen(req, timeout=10) as resp:
+                    data = json.loads(resp.read())
+                    items = data if isinstance(data, list) else data.get('data', [])
+                    for m in items:
+                        name = m.get('name') or m.get('id', '')
+                        if not name:
+                            continue
+                        mtype = m.get('type', '')
+                        if mtype in ('image', 'audio') or 'audio' in name:
+                            continue
+                        models.append({
+                            'id': name,
+                            'object': 'model',
+                            'provider': m.get('provider', 'Pollinations'),
+                            'description': m.get('description', name),
+                        })
+            except Exception:
+                pass
+        # Comprehensive fallback list with all known working models
         if not models:
             for item in [
+                # OpenAI
                 ('openai', 'GPT-4o', 'OpenAI'),
                 ('openai-large', 'GPT-4o Large', 'OpenAI'),
                 ('openai-reasoning', 'o3-mini Reasoning', 'OpenAI'),
-                ('mistral', 'Mistral Large', 'Mistral'),
-                ('llama', 'Llama 3.3 70B', 'Meta'),
-                ('llamalight', 'Llama 3.1 8B', 'Meta'),
+                ('openai-roblox', 'GPT-4o (Roblox)', 'OpenAI'),
+                ('searchgpt', 'SearchGPT + Web Search', 'OpenAI'),
+                # Google
                 ('gemini', 'Gemini 2.0 Flash', 'Google'),
-                ('gemini-thinking', 'Gemini 2.0 Thinking', 'Google'),
-                ('deepseek', 'DeepSeek-V3', 'DeepSeek'),
-                ('deepseek-r1', 'DeepSeek-R1', 'DeepSeek'),
+                ('gemini-thinking', 'Gemini 2.0 Flash Thinking', 'Google'),
+                ('gemini-search', 'Gemini 2.0 + Google Search', 'Google'),
+                # Anthropic (via Pollinations)
+                ('claude-hybridspace', 'Claude (HybridSpace)', 'Anthropic'),
+                # Meta
+                ('llama', 'Llama 3.3 70B', 'Meta'),
+                ('llamalight', 'Llama 3.1 8B Light', 'Meta'),
+                ('llamauncensored', 'Llama Uncensored', 'Meta'),
+                # Mistral
+                ('mistral', 'Mistral Large 2', 'Mistral'),
+                ('mistral-roblox', 'Mistral (Roblox)', 'Mistral'),
+                # DeepSeek
+                ('deepseek', 'DeepSeek V3', 'DeepSeek'),
+                ('deepseek-r1', 'DeepSeek R1 Reasoning', 'DeepSeek'),
+                # Alibaba / Qwen
                 ('qwen-coder', 'Qwen 2.5 Coder 32B', 'Alibaba'),
                 ('qwq', 'QwQ 32B Reasoning', 'Alibaba'),
+                ('qwen', 'Qwen 2.5 72B', 'Alibaba'),
+                # Microsoft
                 ('phi', 'Phi-4 14B', 'Microsoft'),
-                ('searchgpt', 'SearchGPT (web)', 'OpenAI'),
-                ('gemini-search', 'Gemini Search (web)', 'Google'),
+                # Community
+                ('hormoz', 'Hormoz 8B', 'Community'),
+                ('midijourney', 'MidiJourney', 'Community'),
+                ('rtist', 'Rtist', 'Community'),
+                ('evil', 'Evil (без цензуры)', 'Community'),
+                ('sur', 'Sur (multilingual)', 'Community'),
+                ('sur-mistral', 'Sur Mistral', 'Community'),
+                ('unity', 'Unity Uncensored', 'Community'),
+                ('bidara', 'Bidara', 'Community'),
             ]:
                 models.append({'id': item[0], 'object': 'model', 'provider': item[2], 'description': item[1]})
         # Add Ollama models if configured
