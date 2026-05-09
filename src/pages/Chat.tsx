@@ -80,6 +80,12 @@ const FALLBACK_MODELS = [
   { id: 'qwen',               label: 'Qwen 2.5 72B',              provider: 'Alibaba' },
   // Microsoft
   { id: 'phi',                label: 'Phi-4 14B',                 provider: 'Microsoft' },
+  // xAI
+  { id: 'grok',               label: 'Grok 3',                    provider: 'xAI' },
+  { id: 'grok-beta',          label: 'Grok 3 Beta',               provider: 'xAI' },
+  // Perplexity
+  { id: 'perplexity',         label: 'Sonar Large (web)',         provider: 'Perplexity' },
+  { id: 'perplexity-reasoning', label: 'Sonar Reasoning',         provider: 'Perplexity' },
   // Community
   { id: 'hormoz',             label: 'Hormoz 8B',                 provider: 'Community' },
   { id: 'sur',                label: 'Sur (multilingual)',        provider: 'Community' },

@@ -270,6 +270,12 @@ def handler(event: dict, context) -> dict:
                 ('qwen', 'Qwen 2.5 72B', 'Alibaba'),
                 # Microsoft
                 ('phi', 'Phi-4 14B', 'Microsoft'),
+                # xAI
+                ('grok', 'Grok 3', 'xAI'),
+                ('grok-beta', 'Grok 3 Beta', 'xAI'),
+                # Perplexity
+                ('perplexity', 'Sonar Large (web)', 'Perplexity'),
+                ('perplexity-reasoning', 'Sonar Reasoning', 'Perplexity'),
                 # Community
                 ('hormoz', 'Hormoz 8B', 'Community'),
                 ('midijourney', 'MidiJourney', 'Community'),
