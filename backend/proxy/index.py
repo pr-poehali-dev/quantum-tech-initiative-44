@@ -79,6 +79,8 @@ def check_rate_limit(db, key_id, rpm_limit):
     return count <= rpm_limit
 
 def log_usage(db, key_id, user_id, model, provider, prompt_tokens, completion_tokens, path, status_code, latency_ms):
+    if user_id is None:
+        return  # anonymous — skip logging
     total = prompt_tokens + completion_tokens
     cur = db.cursor()
     cur.execute(
@@ -309,7 +311,7 @@ def handler(event: dict, context) -> dict:
 
         db = get_db()
 
-        # Auth: dw-key OR internal user (X-User-Id header from app)
+        # Auth: dw-key OR internal user (X-User-Id) OR anonymous (Pollinations is free)
         if raw_key and raw_key.startswith('dw-'):
             key_info, err = validate_key(db, raw_key)
             if err:
@@ -319,7 +321,6 @@ def handler(event: dict, context) -> dict:
                 db.close()
                 return {'statusCode': 429, 'headers': {**CORS_HEADERS, 'Content-Type': 'application/json'}, 'body': json.dumps({'error': {'message': 'Rate limit exceeded', 'type': 'rate_limit_error'}})}
         elif user_id_header and user_id_header.isdigit():
-            # Internal app user — find their active key or use anonymous slot
             cur = db.cursor()
             cur.execute("SELECT id, rate_limit_rpm, allowed_models FROM api_keys WHERE user_id = %s AND is_active = true ORDER BY id LIMIT 1", (int(user_id_header),))
             row = cur.fetchone()
@@ -329,9 +330,8 @@ def handler(event: dict, context) -> dict:
             else:
                 key_info = {'id': None, 'user_id': int(user_id_header), 'quota_tokens': None, 'used_tokens': 0, 'rate_limit_rpm': 60, 'allowed_models': None}
         else:
-            db.close()
-            print(f"[auth-fail] raw_key={repr(raw_key)} user_id_header={repr(user_id_header)} headers={list((event.get('headers') or {}).keys())}")
-            return {'statusCode': 401, 'headers': {**CORS_HEADERS, 'Content-Type': 'application/json'}, 'body': json.dumps({'error': {'message': f'Invalid or missing API key. Got user_id={repr(user_id_header)}, key={repr(raw_key)}', 'type': 'authentication_error'}})}
+            # Anonymous — open access (Pollinations is free)
+            key_info = {'id': None, 'user_id': None, 'quota_tokens': None, 'used_tokens': 0, 'rate_limit_rpm': 20, 'allowed_models': None}
 
         body = {}
         if event.get('body'):

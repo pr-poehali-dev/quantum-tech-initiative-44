@@ -485,6 +485,7 @@ export default function Chat() {
       setStreamingContent('')
     } catch (e: unknown) {
       if (e instanceof Error && e.name === 'AbortError') return
+      console.error('Chat fetch error:', e, 'name:', e instanceof Error ? e.name : '?', 'aborted:', ctrl.signal.aborted)
       const msg = e instanceof Error ? e.message : 'Соединение прервано'
       const errMsg: Message = { id: makeId(), role: 'assistant', content: `Ошибка: ${msg}`, createdAt: Date.now() }
       updateConvos(currentConvos.map(c => c.id === convo.id ? { ...c, messages: [...messages, errMsg] } : c))
