@@ -330,7 +330,8 @@ def handler(event: dict, context) -> dict:
                 key_info = {'id': None, 'user_id': int(user_id_header), 'quota_tokens': None, 'used_tokens': 0, 'rate_limit_rpm': 60, 'allowed_models': None}
         else:
             db.close()
-            return {'statusCode': 401, 'headers': {**CORS_HEADERS, 'Content-Type': 'application/json'}, 'body': json.dumps({'error': {'message': 'Invalid or missing API key', 'type': 'authentication_error'}})}
+            print(f"[auth-fail] raw_key={repr(raw_key)} user_id_header={repr(user_id_header)} headers={list((event.get('headers') or {}).keys())}")
+            return {'statusCode': 401, 'headers': {**CORS_HEADERS, 'Content-Type': 'application/json'}, 'body': json.dumps({'error': {'message': f'Invalid or missing API key. Got user_id={repr(user_id_header)}, key={repr(raw_key)}', 'type': 'authentication_error'}})}
 
         body = {}
         if event.get('body'):
