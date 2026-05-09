@@ -241,36 +241,7 @@ def handler(event: dict, context) -> dict:
     action = (event.get('queryStringParameters') or {}).get('action', '')
     if method == 'GET' and ('models' in path or action == 'models'):
         models = []
-        # Fetch from Pollinations (try multiple endpoints)
-        for endpoint in [
-            'https://text.pollinations.ai/models',
-            'https://api.pollinations.ai/v1/models',
-        ]:
-            if models:
-                break
-            try:
-                req = urllib.request.Request(endpoint, headers={'User-Agent': 'Mozilla/5.0'})
-                with urllib.request.urlopen(req, timeout=10) as resp:
-                    data = json.loads(resp.read())
-                    items = data if isinstance(data, list) else data.get('data', [])
-                    for m in items:
-                        name = m.get('name') or m.get('id', '')
-                        if not name:
-                            continue
-                        mtype = m.get('type', '')
-                        if mtype in ('image', 'audio') or 'audio' in name:
-                            continue
-                        models.append({
-                            'id': name,
-                            'object': 'model',
-                            'provider': m.get('provider', 'Pollinations'),
-                            'description': m.get('description', name),
-                        })
-            except Exception:
-                pass
-        # Comprehensive fallback list with all known working models
-        if not models:
-            for item in [
+        for item in [
                 # OpenAI
                 ('openai', 'GPT-4o', 'OpenAI'),
                 ('openai-large', 'GPT-4o Large', 'OpenAI'),
