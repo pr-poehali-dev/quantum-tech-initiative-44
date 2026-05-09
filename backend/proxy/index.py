@@ -106,6 +106,34 @@ def count_tokens_approx(messages):
                     total += len(str(block.get('text', ''))) // 4
     return max(total, 1)
 
+def route_to_pollinations(body, model):
+    url = 'https://text.pollinations.ai/openai'
+    payload = {
+        'model': model,
+        'messages': body.get('messages', []),
+        'stream': False,
+        'private': True,
+    }
+    if body.get('temperature') is not None:
+        payload['temperature'] = body['temperature']
+    if body.get('max_tokens'):
+        payload['max_tokens'] = body['max_tokens']
+    req_data = json.dumps(payload).encode()
+    req = urllib.request.Request(url, data=req_data, headers={'Content-Type': 'application/json'})
+    with urllib.request.urlopen(req, timeout=120) as resp:
+        result = json.loads(resp.read())
+    content = result.get('choices', [{}])[0].get('message', {}).get('content', '')
+    usage = result.get('usage', {})
+    prompt_tokens = usage.get('prompt_tokens', count_tokens_approx(body.get('messages', [])))
+    completion_tokens = usage.get('completion_tokens', len(content) // 4)
+    return {
+        'id': result.get('id', f"chatcmpl-pollinations-{int(time.time())}"),
+        'object': 'chat.completion',
+        'model': model,
+        'choices': [{'index': 0, 'message': {'role': 'assistant', 'content': content}, 'finish_reason': 'stop'}],
+        'usage': {'prompt_tokens': prompt_tokens, 'completion_tokens': completion_tokens, 'total_tokens': prompt_tokens + completion_tokens}
+    }, prompt_tokens, completion_tokens, 'pollinations'
+
 def route_to_ollama(body, model):
     ollama_url = os.environ.get('OLLAMA_BASE_URL', 'http://localhost:11434')
     url = f"{ollama_url}/api/chat"
@@ -211,20 +239,57 @@ def handler(event: dict, context) -> dict:
     # GET /v1/models — list available models
     action = (event.get('queryStringParameters') or {}).get('action', '')
     if method == 'GET' and ('models' in path or action == 'models'):
-        ollama_url = os.environ.get('OLLAMA_BASE_URL', 'http://localhost:11434')
         models = []
+        # Fetch from Pollinations
         try:
-            req = urllib.request.Request(f"{ollama_url}/api/tags")
-            with urllib.request.urlopen(req, timeout=5) as resp:
+            req = urllib.request.Request(
+                'https://text.pollinations.ai/models',
+                headers={'User-Agent': 'Mozilla/5.0'}
+            )
+            with urllib.request.urlopen(req, timeout=10) as resp:
                 data = json.loads(resp.read())
-                for m in data.get('models', []):
-                    models.append({'id': m['name'], 'object': 'model', 'provider': 'ollama'})
+                if isinstance(data, list):
+                    for m in data:
+                        if m.get('type') not in ('image', 'audio') and 'audio' not in m.get('name', ''):
+                            models.append({
+                                'id': m.get('name', ''),
+                                'object': 'model',
+                                'provider': m.get('provider', 'pollinations'),
+                                'description': m.get('description', m.get('name', '')),
+                            })
         except Exception:
             pass
-        # Add known Anthropic models if key configured
-        if os.environ.get('ANTHROPIC_API_KEY'):
-            for m in ANTHROPIC_MODELS:
-                models.append({'id': m, 'object': 'model', 'provider': 'anthropic'})
+        # Fallback hardcoded list if fetch failed
+        if not models:
+            for item in [
+                ('openai', 'GPT-4o', 'OpenAI'),
+                ('openai-large', 'GPT-4o Large', 'OpenAI'),
+                ('openai-reasoning', 'o3-mini Reasoning', 'OpenAI'),
+                ('mistral', 'Mistral Large', 'Mistral'),
+                ('llama', 'Llama 3.3 70B', 'Meta'),
+                ('llamalight', 'Llama 3.1 8B', 'Meta'),
+                ('gemini', 'Gemini 2.0 Flash', 'Google'),
+                ('gemini-thinking', 'Gemini 2.0 Thinking', 'Google'),
+                ('deepseek', 'DeepSeek-V3', 'DeepSeek'),
+                ('deepseek-r1', 'DeepSeek-R1', 'DeepSeek'),
+                ('qwen-coder', 'Qwen 2.5 Coder 32B', 'Alibaba'),
+                ('qwq', 'QwQ 32B Reasoning', 'Alibaba'),
+                ('phi', 'Phi-4 14B', 'Microsoft'),
+                ('searchgpt', 'SearchGPT (web)', 'OpenAI'),
+                ('gemini-search', 'Gemini Search (web)', 'Google'),
+            ]:
+                models.append({'id': item[0], 'object': 'model', 'provider': item[2], 'description': item[1]})
+        # Add Ollama models if configured
+        ollama_url = os.environ.get('OLLAMA_BASE_URL', '')
+        if ollama_url:
+            try:
+                req = urllib.request.Request(f"{ollama_url}/api/tags")
+                with urllib.request.urlopen(req, timeout=5) as resp:
+                    data = json.loads(resp.read())
+                    for m in data.get('models', []):
+                        models.append({'id': m['name'], 'object': 'model', 'provider': 'ollama', 'description': m['name']})
+            except Exception:
+                pass
         return {
             'statusCode': 200,
             'headers': {**CORS_HEADERS, 'Content-Type': 'application/json'},
@@ -264,10 +329,12 @@ def handler(event: dict, context) -> dict:
         result = {}
 
         try:
-            if model in ANTHROPIC_MODELS:
+            if model in ANTHROPIC_MODELS and os.environ.get('ANTHROPIC_API_KEY'):
                 result, prompt_tokens, completion_tokens, provider = route_to_anthropic(body, model)
-            else:
+            elif os.environ.get('OLLAMA_BASE_URL'):
                 result, prompt_tokens, completion_tokens, provider = route_to_ollama(body, model)
+            else:
+                result, prompt_tokens, completion_tokens, provider = route_to_pollinations(body, model)
         except urllib.error.HTTPError as e:
             status_code = e.code
             error_body = e.read().decode()

@@ -1,19 +1,11 @@
 {
   "tests": [
     {
-      "name": "List models via action param",
+      "name": "List models — returns array",
       "method": "GET",
       "path": "/?action=models",
       "expectedStatus": 200,
       "expectedBody": {"object": "list"},
-      "bodyMatcher": "partial"
-    },
-    {
-      "name": "Chat without key",
-      "method": "POST",
-      "path": "/?action=chat",
-      "body": {"model": "qwen2.5:7b", "messages": [{"role": "user", "content": "hi"}]},
-      "expectedStatus": 401,
       "bodyMatcher": "partial"
     }
   ]

@@ -10,9 +10,9 @@ import 'katex/dist/katex.min.css'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import Icon from '@/components/ui/icon'
+import { proxyApi } from '@/lib/api'
 
 const POLLINATIONS_URL = 'https://text.pollinations.ai/openai'
-const POLLINATIONS_MODELS_URL = 'https://text.pollinations.ai/models'
 
 type ApiContentPart =
   | { type: 'text'; text: string }
@@ -281,21 +281,16 @@ export default function Chat() {
 
 
   useEffect(() => {
-    fetch(POLLINATIONS_MODELS_URL)
-      .then(r => r.json())
-      .then((data: Array<{ name: string; description?: string; provider?: string; type?: string }>) => {
-        if (Array.isArray(data) && data.length) {
-          const mapped = data
-            .filter(m => m.name && m.type !== 'image' && m.type !== 'audio' && !m.name.includes('audio'))
-            .map(m => ({
-              id: m.name,
-              label: m.description || m.name,
-              provider: m.provider || 'Other',
-            }))
-          if (mapped.length > 0) setFreeModels(mapped)
-        }
-      })
-      .catch(() => {})
+    proxyApi.models().then((res: { object?: string; data?: Array<{ id: string; description?: string; provider?: string }> }) => {
+      if (res.data && res.data.length > 0) {
+        const mapped = res.data.map(m => ({
+          id: m.id,
+          label: m.description || m.id,
+          provider: m.provider || 'Other',
+        }))
+        setFreeModels(mapped)
+      }
+    }).catch(() => {})
   }, [])
 
   useEffect(() => {
