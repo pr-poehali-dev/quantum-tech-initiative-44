@@ -56,7 +56,6 @@ const FALLBACK_MODELS = [
   { id: 'openai',             label: 'GPT-4o',                    provider: 'OpenAI' },
   { id: 'openai-large',       label: 'GPT-4o Large',              provider: 'OpenAI' },
   { id: 'openai-reasoning',   label: 'o3-mini Reasoning',         provider: 'OpenAI' },
-  { id: 'openai-roblox',      label: 'GPT-4o (Roblox)',           provider: 'OpenAI' },
   { id: 'searchgpt',          label: 'SearchGPT + Web Search',    provider: 'OpenAI' },
   // Google
   { id: 'gemini',             label: 'Gemini 2.0 Flash',          provider: 'Google' },
@@ -67,10 +66,8 @@ const FALLBACK_MODELS = [
   // Meta
   { id: 'llama',              label: 'Llama 3.3 70B',             provider: 'Meta' },
   { id: 'llamalight',         label: 'Llama 3.1 8B Light',        provider: 'Meta' },
-  { id: 'llamauncensored',    label: 'Llama Uncensored',          provider: 'Meta' },
   // Mistral
   { id: 'mistral',            label: 'Mistral Large 2',           provider: 'Mistral' },
-  { id: 'mistral-roblox',     label: 'Mistral (Roblox)',          provider: 'Mistral' },
   // DeepSeek
   { id: 'deepseek',           label: 'DeepSeek V3',               provider: 'DeepSeek' },
   { id: 'deepseek-r1',        label: 'DeepSeek R1 Reasoning',     provider: 'DeepSeek' },
@@ -80,21 +77,6 @@ const FALLBACK_MODELS = [
   { id: 'qwen',               label: 'Qwen 2.5 72B',              provider: 'Alibaba' },
   // Microsoft
   { id: 'phi',                label: 'Phi-4 14B',                 provider: 'Microsoft' },
-  // xAI
-  { id: 'grok',               label: 'Grok 3',                    provider: 'xAI' },
-  { id: 'grok-beta',          label: 'Grok 3 Beta',               provider: 'xAI' },
-  // Perplexity
-  { id: 'perplexity',         label: 'Sonar Large (web)',         provider: 'Perplexity' },
-  { id: 'perplexity-reasoning', label: 'Sonar Reasoning',         provider: 'Perplexity' },
-  // Community
-  { id: 'hormoz',             label: 'Hormoz 8B',                 provider: 'Community' },
-  { id: 'sur',                label: 'Sur (multilingual)',        provider: 'Community' },
-  { id: 'sur-mistral',        label: 'Sur Mistral',               provider: 'Community' },
-  { id: 'unity',              label: 'Unity Uncensored',          provider: 'Community' },
-  { id: 'bidara',             label: 'Bidara',                    provider: 'Community' },
-  { id: 'midijourney',        label: 'MidiJourney',               provider: 'Community' },
-  { id: 'rtist',              label: 'Rtist',                     provider: 'Community' },
-  { id: 'evil',               label: 'Evil (без цензуры)',        provider: 'Community' },
 ]
 const STARTERS = [
   'Напиши функцию сортировки на Python',
