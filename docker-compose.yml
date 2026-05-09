@@ -1,0 +1,119 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: api-db
+    restart: always
+    environment:
+      POSTGRES_DB: api_provider
+      POSTGRES_USER: apiuser
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U apiuser -d api_provider"]
+      interval: 5s
+      retries: 20
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    restart: always
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    volumes:
+      - ollama_data:/root/.ollama
+      - ./models:/models
+      - ./scripts:/scripts
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434/"]
+      interval: 10s
+      retries: 30
+
+  model-init:
+    image: curlimages/curl:latest
+    container_name: model-init
+    depends_on:
+      ollama:
+        condition: service_healthy
+    volumes:
+      - ollama_data:/root/.ollama
+      - ./models:/models
+      - ./scripts:/scripts
+    entrypoint: ["/bin/sh", "/scripts/init-model.sh"]
+    environment:
+      - GGUF_URL=${GGUF_URL}
+      - GGUF_FILENAME=${GGUF_FILENAME}
+      - MODEL_NAME=${MODEL_NAME}
+
+  api-gateway:
+    build: ./api-gateway
+    container_name: api-gateway
+    restart: always
+    depends_on:
+      postgres:
+        condition: service_healthy
+      ollama:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://apiuser:${DB_PASSWORD}@postgres:5432/api_provider
+      - OLLAMA_URL=http://ollama:11434
+      - ADMIN_KEY=${ADMIN_KEY}
+      - DEFAULT_MODEL=${MODEL_NAME}
+
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:main
+    container_name: open-webui
+    restart: always
+    depends_on:
+      ollama:
+        condition: service_healthy
+    ports:
+      - "3000:8080"
+    environment:
+      - OLLAMA_BASE_URL=http://ollama:11434
+    volumes:
+      - webui_data:/app/backend/data
+
+  qwen-code-agent:
+    build: ./qwen-code-agent
+    container_name: qwen-code-agent
+    restart: unless-stopped
+    depends_on:
+      - api-gateway
+    environment:
+      - QWEN_API_BASE=http://api-gateway:8000/v1
+      - QWEN_API_KEY=${QWEN_CODE_AGENT_KEY}
+      - QWEN_MODEL=${MODEL_NAME}
+      - QWEN_MAX_TOKENS=8192
+      - QWEN_WORKSPACE=/workspace
+    volumes:
+      - ./workspace:/workspace
+    stdin_open: true
+    tty: true
+
+  nginx:
+    image: nginx:alpine
+    container_name: nginx-proxy
+    restart: always
+    depends_on:
+      - api-gateway
+      - open-webui
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+
+volumes:
+  pg_data:
+  ollama_data:
+  webui_data:
