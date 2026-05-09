@@ -247,34 +247,8 @@ def handler(event: dict, context) -> dict:
     # GET /v1/models — list available models
     action = (event.get('queryStringParameters') or {}).get('action', '')
     if method == 'GET' and ('models' in path or action == 'models'):
-        # Try to fetch live model list from Pollinations
         models = []
-        for endpoint in ['https://text.pollinations.ai/models', 'https://gen.pollinations.ai/v1/models']:
-            try:
-                req = urllib.request.Request(endpoint, headers={'User-Agent': 'Mozilla/5.0'})
-                with urllib.request.urlopen(req, timeout=8) as resp:
-                    data = json.loads(resp.read())
-                    items = data if isinstance(data, list) else data.get('data', [])
-                    for m in items:
-                        name = m.get('name') or m.get('id', '')
-                        if not name:
-                            continue
-                        mtype = m.get('type', '')
-                        if mtype in ('image', 'audio') or 'audio' in name or 'image' in name:
-                            continue
-                        models.append({
-                            'id': name,
-                            'object': 'model',
-                            'provider': m.get('provider', 'Pollinations'),
-                            'description': m.get('description', name),
-                        })
-                if models:
-                    break
-            except Exception:
-                pass
-        # Fallback: confirmed working models as of May 2026
-        if not models:
-            for item in [
+        for item in [
                 # OpenAI
                 ('openai', 'GPT-4o', 'OpenAI'),
                 ('openai-large', 'GPT-4o Large', 'OpenAI'),
