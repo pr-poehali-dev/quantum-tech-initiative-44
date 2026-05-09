@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from 'react'
+import { useRef, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
@@ -10,9 +10,8 @@ import 'katex/dist/katex.min.css'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import Icon from '@/components/ui/icon'
-import { proxyApi } from '@/lib/api'
 
-const PROXY_URL = 'https://functions.poehali.dev/db4455a3-fb31-4d3d-9fa5-4067e71d38b2'
+const POLLINATIONS_URL = 'https://text.pollinations.ai/openai'
 
 type ApiContentPart =
   | { type: 'text'; text: string }
@@ -49,7 +48,15 @@ interface Conversation {
   createdAt: number
 }
 
-const DEFAULT_MODEL = 'claude-sonnet-4-5'
+const DEFAULT_MODEL = 'openai'
+
+const FREE_MODELS = [
+  { id: 'openai', label: 'GPT-4o (бесплатно)' },
+  { id: 'openai-large', label: 'GPT-4o Large (бесплатно)' },
+  { id: 'openai-reasoning', label: 'o3-mini Reasoning (бесплатно)' },
+  { id: 'mistral', label: 'Mistral (бесплатно)' },
+  { id: 'llama', label: 'Llama 3.3 (бесплатно)' },
+]
 const STARTERS = [
   'Напиши функцию сортировки на Python',
   'Объясни как работает REST API',
@@ -220,19 +227,14 @@ function AttachmentPreview({ att, onRemove }: { att: Attachment; onRemove?: () =
 
 export default function Chat() {
   const navigate = useNavigate()
-  const apiKey = localStorage.getItem('deway_chat_key') || ''
-
   const [convos, setConvos] = useState<Conversation[]>(loadConvos)
   const [activeId, setActiveId] = useState<string | null>(() => loadConvos()[0]?.id || null)
   const [input, setInput] = useState('')
   const [attachments, setAttachments] = useState<Attachment[]>([])
   const [loading, setLoading] = useState(false)
   const [streamingContent, setStreamingContent] = useState('')
-  const [models, setModels] = useState<{ id: string }[]>([])
   const [selectedModel, setSelectedModel] = useState(DEFAULT_MODEL)
   const [sidebarOpen, setSidebarOpen] = useState(true)
-  const [keyInput, setKeyInput] = useState(apiKey)
-  const [showKeyModal, setShowKeyModal] = useState(!apiKey)
   const [search, setSearch] = useState('')
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editingTitle, setEditingTitle] = useState('')
@@ -256,15 +258,7 @@ export default function Chat() {
     c.messages.some(m => m.content.toLowerCase().includes(search.toLowerCase()))
   )
 
-  useEffect(() => {
-    proxyApi.models().then(res => {
-      if (res.data?.length) {
-        setModels(res.data)
-        const hasSonnet = res.data.find((m: { id: string }) => m.id.includes('sonnet'))
-        setSelectedModel(hasSonnet ? hasSonnet.id : res.data[0].id)
-      }
-    })
-  }, [])
+
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -427,8 +421,6 @@ export default function Chat() {
   }
 
   const sendFromMessages = async (messages: Message[], convo: Conversation, currentConvos: Conversation[]) => {
-    const key = localStorage.getItem('deway_chat_key')
-    if (!key) { setShowKeyModal(true); return }
     setLoading(true)
     setStreamingContent('')
     const ctrl = new AbortController()
@@ -444,15 +436,16 @@ export default function Chat() {
     ]
 
     try {
-      const res = await fetch(`${PROXY_URL}/v1/chat/completions`, {
+      const model = convo.model || selectedModel
+      const res = await fetch(POLLINATIONS_URL, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
-        body: JSON.stringify({ model: convo.model || selectedModel, messages: apiMessages, stream: false }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model, messages: apiMessages, stream: false, private: true }),
         signal: ctrl.signal
       })
       if (!res.ok) {
         const err = await res.json().catch(() => ({ error: { message: 'Ошибка сервера' } }))
-        throw new Error(err.error?.message || err.error?.error?.message || 'Ошибка сервера')
+        throw new Error(err.error?.message || 'Ошибка сервера')
       }
       const data = await res.json()
       const full = data.choices?.[0]?.message?.content || 'Нет ответа'
@@ -472,8 +465,6 @@ export default function Chat() {
 
   const send = async () => {
     if ((!input.trim() && !attachments.length) || loading) return
-    const key = localStorage.getItem('deway_chat_key')
-    if (!key) { setShowKeyModal(true); return }
 
     let convo = active
     let currentConvos = convos
@@ -497,7 +488,7 @@ export default function Chat() {
     setTimeout(() => textareaRef.current?.focus(), 50)
   }
 
-  const saveKey = () => { localStorage.setItem('deway_chat_key', keyInput.trim()); setShowKeyModal(false) }
+
 
   const adjustTextarea = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setInput(e.target.value)
@@ -522,39 +513,7 @@ export default function Chat() {
         </div>
       )}
 
-      {/* API Key modal */}
-      {showKeyModal && (
-        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
-          <div className="bg-zinc-900 border border-zinc-700 rounded-2xl p-6 w-full max-w-md shadow-2xl space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-red-500/20 flex items-center justify-center">
-                <Icon name="Key" size={20} className="text-red-400" />
-              </div>
-              <div>
-                <h2 className="font-semibold text-base">API-ключ deway</h2>
-                <p className="text-zinc-500 text-xs">Нужен для отправки запросов</p>
-              </div>
-            </div>
-            <p className="text-zinc-400 text-sm">
-              Получи ключ в{' '}
-              <button onClick={() => navigate('/dashboard')} className="text-red-400 hover:underline">Dashboard</button>
-              {' '}→ API-ключи
-            </p>
-            <input
-              autoFocus
-              className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-2.5 text-sm font-mono focus:outline-none focus:border-red-500 transition-colors"
-              placeholder="dw-xxxxxxxxxxxx"
-              value={keyInput}
-              onChange={e => setKeyInput(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && saveKey()}
-            />
-            <div className="flex gap-2">
-              <Button className="flex-1 bg-red-500 hover:bg-red-600 text-white border-0 rounded-xl" onClick={saveKey} disabled={!keyInput.trim()}>Сохранить и войти</Button>
-              {apiKey && <Button variant="ghost" className="text-zinc-400 rounded-xl" onClick={() => setShowKeyModal(false)}>Отмена</Button>}
-            </div>
-          </div>
-        </div>
-      )}
+
 
       {/* System prompt modal */}
       {showSystemPrompt && (
@@ -630,9 +589,7 @@ export default function Chat() {
           <button onClick={() => navigate('/dashboard')} className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800/60 text-xs transition-colors">
             <Icon name="LayoutDashboard" size={14} />Dashboard
           </button>
-          <button onClick={() => setShowKeyModal(true)} className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800/60 text-xs transition-colors">
-            <Icon name="Key" size={14} />API-ключ
-          </button>
+
         </div>
       </div>
 
@@ -659,20 +616,23 @@ export default function Chat() {
             <div className="relative">
               <button onClick={() => setShowModelSelect(!showModelSelect)}
                 className="flex items-center gap-1.5 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-white text-xs rounded-lg px-3 py-1.5 transition-colors">
-                <span className="max-w-[160px] truncate">{selectedModel}</span>
+                <span className="max-w-[160px] truncate">{FREE_MODELS.find(m => m.id === selectedModel)?.label || selectedModel}</span>
                 <Icon name="ChevronDown" size={12} className="text-zinc-400 flex-shrink-0" />
               </button>
               {showModelSelect && (
                 <>
                   <div className="fixed inset-0 z-30" onClick={() => setShowModelSelect(false)} />
-                  <div className="absolute right-0 top-full mt-1 bg-zinc-800 border border-zinc-700 rounded-xl shadow-2xl z-40 min-w-[220px] py-1 overflow-hidden">
-                    {models.map(m => (
+                  <div className="absolute right-0 top-full mt-1 bg-zinc-800 border border-zinc-700 rounded-xl shadow-2xl z-40 min-w-[240px] py-1 overflow-hidden">
+                    {FREE_MODELS.map(m => (
                       <button key={m.id} onClick={() => { setSelectedModel(m.id); setShowModelSelect(false) }}
                         className={`w-full text-left px-3 py-2 text-xs hover:bg-zinc-700 transition-colors flex items-center justify-between ${selectedModel === m.id ? 'text-white' : 'text-zinc-300'}`}>
-                        <span className="truncate">{m.id}</span>
+                        <span className="truncate">{m.label}</span>
                         {selectedModel === m.id && <Icon name="Check" size={12} className="text-red-400 flex-shrink-0 ml-2" />}
                       </button>
                     ))}
+                    <div className="border-t border-zinc-700 px-3 py-2">
+                      <p className="text-zinc-600 text-[10px]">Бесплатно · Без регистрации · Pollinations AI</p>
+                    </div>
                   </div>
                 </>
               )}
