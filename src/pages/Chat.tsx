@@ -12,6 +12,7 @@ import { Textarea } from '@/components/ui/textarea'
 import Icon from '@/components/ui/icon'
 
 const POLLINATIONS_URL = 'https://text.pollinations.ai/openai'
+const POLLINATIONS_MODELS_URL = 'https://text.pollinations.ai/models'
 
 type ApiContentPart =
   | { type: 'text'; text: string }
@@ -51,15 +52,29 @@ interface Conversation {
 const DEFAULT_MODEL = 'openai'
 
 const FALLBACK_MODELS = [
-  { id: 'openai', label: 'GPT-4o' },
-  { id: 'openai-large', label: 'GPT-4o Large' },
-  { id: 'openai-reasoning', label: 'o3-mini Reasoning' },
-  { id: 'mistral', label: 'Mistral Large' },
-  { id: 'llama', label: 'Llama 3.3 70B' },
-  { id: 'gemini', label: 'Gemini 2.0 Flash' },
-  { id: 'claude-hybridspace', label: 'Claude Hybridspace' },
-  { id: 'deepseek', label: 'DeepSeek-V3' },
-  { id: 'qwen-coder', label: 'Qwen 2.5 Coder' },
+  { id: 'openai',            label: 'GPT-4o',               provider: 'OpenAI' },
+  { id: 'openai-large',      label: 'GPT-4o Large',         provider: 'OpenAI' },
+  { id: 'openai-reasoning',  label: 'o3-mini Reasoning',    provider: 'OpenAI' },
+  { id: 'openai-roblox',     label: 'GPT-4o Roblox',        provider: 'OpenAI' },
+  { id: 'mistral',           label: 'Mistral Large',        provider: 'Mistral' },
+  { id: 'mistral-roblox',    label: 'Mistral Roblox',       provider: 'Mistral' },
+  { id: 'llama',             label: 'Llama 3.3 70B',        provider: 'Meta' },
+  { id: 'llamalight',        label: 'Llama 3.1 8B',         provider: 'Meta' },
+  { id: 'llamauncensored',   label: 'Llama Uncensored',     provider: 'Meta' },
+  { id: 'gemini',            label: 'Gemini 2.0 Flash',     provider: 'Google' },
+  { id: 'gemini-thinking',   label: 'Gemini 2.0 Thinking',  provider: 'Google' },
+  { id: 'deepseek',          label: 'DeepSeek-V3',          provider: 'DeepSeek' },
+  { id: 'deepseek-r1',       label: 'DeepSeek-R1',          provider: 'DeepSeek' },
+  { id: 'qwen-coder',        label: 'Qwen 2.5 Coder 32B',   provider: 'Alibaba' },
+  { id: 'qwq',               label: 'QwQ 32B Reasoning',    provider: 'Alibaba' },
+  { id: 'phi',               label: 'Phi-4 14B',            provider: 'Microsoft' },
+  { id: 'claude-hybridspace',label: 'Claude Hybridspace',   provider: 'Anthropic' },
+  { id: 'hormoz',            label: 'Hormoz 8B',            provider: 'Community' },
+  { id: 'midijourney',       label: 'MidiJourney',          provider: 'Community' },
+  { id: 'rtist',             label: 'Rtist',                provider: 'Community' },
+  { id: 'searchgpt',        label: 'SearchGPT (web)',       provider: 'OpenAI' },
+  { id: 'gemini-search',     label: 'Gemini Search (web)',  provider: 'Google' },
+  { id: 'evil',              label: 'Evil (без цензуры)',   provider: 'Community' },
 ]
 const STARTERS = [
   'Напиши функцию сортировки на Python',
@@ -238,7 +253,7 @@ export default function Chat() {
   const [loading, setLoading] = useState(false)
   const [streamingContent, setStreamingContent] = useState('')
   const [selectedModel, setSelectedModel] = useState(DEFAULT_MODEL)
-  const [freeModels, setFreeModels] = useState(FALLBACK_MODELS)
+  const [freeModels, setFreeModels] = useState<{ id: string; label: string; provider: string }[]>(FALLBACK_MODELS)
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [search, setSearch] = useState('')
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -266,14 +281,18 @@ export default function Chat() {
 
 
   useEffect(() => {
-    fetch('https://text.pollinations.ai/models')
+    fetch(POLLINATIONS_MODELS_URL)
       .then(r => r.json())
-      .then((data: Array<{ name: string; description?: string; provider?: string }>) => {
+      .then((data: Array<{ name: string; description?: string; provider?: string; type?: string }>) => {
         if (Array.isArray(data) && data.length) {
           const mapped = data
-            .filter(m => m.name && !m.name.includes('audio') && !m.name.includes('image'))
-            .map(m => ({ id: m.name, label: m.description || m.name }))
-          setFreeModels(mapped)
+            .filter(m => m.name && m.type !== 'image' && m.type !== 'audio' && !m.name.includes('audio'))
+            .map(m => ({
+              id: m.name,
+              label: m.description || m.name,
+              provider: m.provider || 'Other',
+            }))
+          if (mapped.length > 0) setFreeModels(mapped)
         }
       })
       .catch(() => {})
@@ -641,15 +660,28 @@ export default function Chat() {
               {showModelSelect && (
                 <>
                   <div className="fixed inset-0 z-30" onClick={() => setShowModelSelect(false)} />
-                  <div className="absolute right-0 top-full mt-1 bg-zinc-800 border border-zinc-700 rounded-xl shadow-2xl z-40 min-w-[240px] py-1 overflow-hidden">
-                    {freeModels.map(m => (
-                      <button key={m.id} onClick={() => { setSelectedModel(m.id); setShowModelSelect(false) }}
-                        className={`w-full text-left px-3 py-2 text-xs hover:bg-zinc-700 transition-colors flex items-center justify-between ${selectedModel === m.id ? 'text-white' : 'text-zinc-300'}`}>
-                        <span className="truncate">{m.label}</span>
-                        {selectedModel === m.id && <Icon name="Check" size={12} className="text-red-400 flex-shrink-0 ml-2" />}
-                      </button>
-                    ))}
-                    <div className="border-t border-zinc-700 px-3 py-2">
+                  <div className="absolute right-0 top-full mt-1 bg-zinc-800 border border-zinc-700 rounded-xl shadow-2xl z-40 min-w-[280px] max-h-80 overflow-y-auto py-1">
+                    {(() => {
+                      const grouped = freeModels.reduce<Record<string, typeof freeModels>>((acc, m) => {
+                        const p = m.provider || 'Other'
+                        if (!acc[p]) acc[p] = []
+                        acc[p].push(m)
+                        return acc
+                      }, {})
+                      return Object.entries(grouped).map(([provider, models]) => (
+                        <div key={provider}>
+                          <div className="px-3 py-1 text-[10px] text-zinc-500 uppercase tracking-wider font-medium">{provider}</div>
+                          {models.map(m => (
+                            <button key={m.id} onClick={() => { setSelectedModel(m.id); setShowModelSelect(false) }}
+                              className={`w-full text-left px-3 py-2 text-xs hover:bg-zinc-700 transition-colors flex items-center justify-between ${selectedModel === m.id ? 'text-white bg-zinc-700/50' : 'text-zinc-300'}`}>
+                              <span className="truncate">{m.label}</span>
+                              {selectedModel === m.id && <Icon name="Check" size={12} className="text-red-400 flex-shrink-0 ml-2" />}
+                            </button>
+                          ))}
+                        </div>
+                      ))
+                    })()}
+                    <div className="border-t border-zinc-700 px-3 py-2 mt-1">
                       <p className="text-zinc-600 text-[10px]">Бесплатно · Без регистрации · Pollinations AI</p>
                     </div>
                   </div>
