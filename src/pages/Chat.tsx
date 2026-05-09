@@ -50,12 +50,16 @@ interface Conversation {
 
 const DEFAULT_MODEL = 'openai'
 
-const FREE_MODELS = [
-  { id: 'openai', label: 'GPT-4o (бесплатно)' },
-  { id: 'openai-large', label: 'GPT-4o Large (бесплатно)' },
-  { id: 'openai-reasoning', label: 'o3-mini Reasoning (бесплатно)' },
-  { id: 'mistral', label: 'Mistral (бесплатно)' },
-  { id: 'llama', label: 'Llama 3.3 (бесплатно)' },
+const FALLBACK_MODELS = [
+  { id: 'openai', label: 'GPT-4o' },
+  { id: 'openai-large', label: 'GPT-4o Large' },
+  { id: 'openai-reasoning', label: 'o3-mini Reasoning' },
+  { id: 'mistral', label: 'Mistral Large' },
+  { id: 'llama', label: 'Llama 3.3 70B' },
+  { id: 'gemini', label: 'Gemini 2.0 Flash' },
+  { id: 'claude-hybridspace', label: 'Claude Hybridspace' },
+  { id: 'deepseek', label: 'DeepSeek-V3' },
+  { id: 'qwen-coder', label: 'Qwen 2.5 Coder' },
 ]
 const STARTERS = [
   'Напиши функцию сортировки на Python',
@@ -234,6 +238,7 @@ export default function Chat() {
   const [loading, setLoading] = useState(false)
   const [streamingContent, setStreamingContent] = useState('')
   const [selectedModel, setSelectedModel] = useState(DEFAULT_MODEL)
+  const [freeModels, setFreeModels] = useState(FALLBACK_MODELS)
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [search, setSearch] = useState('')
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -259,6 +264,20 @@ export default function Chat() {
   )
 
 
+
+  useEffect(() => {
+    fetch('https://text.pollinations.ai/models')
+      .then(r => r.json())
+      .then((data: Array<{ name: string; description?: string; provider?: string }>) => {
+        if (Array.isArray(data) && data.length) {
+          const mapped = data
+            .filter(m => m.name && !m.name.includes('audio') && !m.name.includes('image'))
+            .map(m => ({ id: m.name, label: m.description || m.name }))
+          setFreeModels(mapped)
+        }
+      })
+      .catch(() => {})
+  }, [])
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -616,14 +635,14 @@ export default function Chat() {
             <div className="relative">
               <button onClick={() => setShowModelSelect(!showModelSelect)}
                 className="flex items-center gap-1.5 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-white text-xs rounded-lg px-3 py-1.5 transition-colors">
-                <span className="max-w-[160px] truncate">{FREE_MODELS.find(m => m.id === selectedModel)?.label || selectedModel}</span>
+                <span className="max-w-[160px] truncate">{freeModels.find(m => m.id === selectedModel)?.label || selectedModel}</span>
                 <Icon name="ChevronDown" size={12} className="text-zinc-400 flex-shrink-0" />
               </button>
               {showModelSelect && (
                 <>
                   <div className="fixed inset-0 z-30" onClick={() => setShowModelSelect(false)} />
                   <div className="absolute right-0 top-full mt-1 bg-zinc-800 border border-zinc-700 rounded-xl shadow-2xl z-40 min-w-[240px] py-1 overflow-hidden">
-                    {FREE_MODELS.map(m => (
+                    {freeModels.map(m => (
                       <button key={m.id} onClick={() => { setSelectedModel(m.id); setShowModelSelect(false) }}
                         className={`w-full text-left px-3 py-2 text-xs hover:bg-zinc-700 transition-colors flex items-center justify-between ${selectedModel === m.id ? 'text-white' : 'text-zinc-300'}`}>
                         <span className="truncate">{m.label}</span>
