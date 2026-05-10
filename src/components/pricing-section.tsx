@@ -5,7 +5,7 @@ import Icon from "@/components/ui/icon"
 const PLANS = [
   {
     name: "Starter",
-    price: "$49",
+    price: "4 900 ₽",
     period: "/мес",
     description: "Для пилотов и небольших проектов",
     features: [
@@ -20,7 +20,7 @@ const PLANS = [
   },
   {
     name: "Business",
-    price: "$499",
+    price: "49 000 ₽",
     period: "/мес",
     description: "Для растущих продуктов",
     features: [
@@ -36,7 +36,7 @@ const PLANS = [
   },
   {
     name: "Enterprise",
-    price: "Custom",
+    price: "По договору",
     period: "",
     description: "Для крупных компаний",
     features: [
